@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Pipeline Tracker | Dashboard</title>
+    <link rel="stylesheet" href="./src/assets/style.css">
+
+    <!-- Dashboard-only styles. Layout/sidebar/table basics still come from style.css. -->
+    <style>
+        :root {
+            --blue: #2563EB;
+            --ink: #1E293B;
+            --muted: #64748B;
+            --line: #E2E8F0;
+            --red: #DC2626;
+            --amber: #D97706;
+            --green: #16A34A;
+        }
+
+        .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+        /* Keep the sidebar at full width even when a wide table is on screen,
+           and let the main area shrink so tables scroll sideways instead of squeezing the sidebar. */
+        #sidebar { flex-shrink: 0; }
+        #main { min-width: 0; }
+        #sidebar a[aria-current="page"] { background-color: rgba(255, 255, 255, 0.12); font-weight: 700; }
+
+        /* search box takes the spare room; dropdowns stay their natural size */
+        #filters input { min-width: 200px; }
+        #filters select { width: auto; flex: 0 0 auto; }
+
+        /* page header */
+        .page-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
+        .page-head h1 { margin: 0 0 6px 0; }
+        #greeting { margin: 0; font-size: 16px; color: var(--ink); }
+        #summary { margin: 4px 0 0 0; font-size: 14px; color: var(--muted); }
+        .head-actions { display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--muted); }
+        .btn { background: #fff; border: 1px solid var(--line); border-radius: 6px; padding: 8px 14px; font-size: 14px; font-weight: 600; color: var(--ink); cursor: pointer; }
+        .btn:hover { border-color: var(--blue); color: var(--blue); }
+        .btn:disabled { opacity: 0.6; cursor: default; }
+        .btn-link { background: none; border: 0; padding: 0; font-size: 13px; font-weight: 600; color: var(--blue); cursor: pointer; }
+
+        /* stat cards (5 now, so they wrap on narrow screens) */
+        #stats { flex-wrap: wrap; }
+        #stats .card { min-width: 170px; padding: 20px; }
+        #stats .card h2 { font-size: 36px; }
+        #stats .card.alert h2 { color: var(--red); }
+        .card small { display: block; margin-top: 6px; font-size: 12px; color: var(--muted); }
+
+        /* panels */
+        .panel { background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); padding: 20px 24px; margin-bottom: 24px; }
+        .panel h2 { margin: 0 0 4px 0; font-size: 18px; }
+        .panel .sub { margin: 0 0 16px 0; font-size: 13px; color: var(--muted); }
+        .panel table { margin-bottom: 0; }
+        .table-wrap { overflow-x: auto; }
+        .two-col { display: grid; grid-template-columns: 3fr 2fr; gap: 24px; align-items: start; }
+        .panel-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; font-size: 13px; color: var(--muted); }
+
+        /* needs-attention list */
+        .attn-list { list-style: none; margin: 0; padding: 0; }
+        .attn-list li { display: flex; gap: 12px; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+        .attn-list li:last-child { border-bottom: 0; }
+        .attn-main { flex: 1; min-width: 0; color: var(--ink); }
+        .attn-main a { font-weight: 700; color: var(--blue); text-decoration: none; }
+        .attn-main a:hover { text-decoration: underline; }
+        .attn-meta { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+        /* badges */
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; line-height: 1.5; white-space: nowrap; }
+        .badge.high { background: #FEE2E2; color: #B91C1C; }
+        .badge.medium { background: #FEF3C7; color: #B45309; }
+        .badge.low { background: #DCFCE7; color: #15803D; }
+        .badge.stage { background: #E0E7FF; color: #3730A3; text-transform: capitalize; }
+        .badge.manual { background: #F1F5F9; color: #475569; font-weight: 600; margin-left: 4px; }
+
+        /* deals table details */
+        td.wrap { white-space: normal; min-width: 190px; }
+        .sub-line { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; white-space: normal; }
+        .progress { width: 90px; height: 6px; border-radius: 999px; background: var(--line); overflow: hidden; margin-bottom: 4px; }
+        .progress span { display: block; height: 100%; background: var(--blue); }
+        .progress.done span { background: var(--green); }
+        .late { color: var(--red); font-weight: 700; }
+        .soon { color: var(--amber); font-weight: 700; }
+        .blocker { display: block; margin-top: 4px; font-size: 12px; color: #B91C1C; white-space: normal; }
+        td a { color: var(--blue); text-decoration: none; font-weight: 600; }
+        td a:hover { text-decoration: underline; }
+        .empty { padding: 16px 0; color: var(--muted); font-size: 14px; }
+
+        /* data-to-fix + banners */
+        details.panel summary { cursor: pointer; font-weight: 700; font-size: 15px; }
+        details.panel ul { margin: 12px 0 0 0; padding-left: 20px; font-size: 14px; color: var(--ink); }
+        details.panel li { margin-bottom: 6px; }
+        .error-banner { background: #FEE2E2; border: 1px solid #FCA5A5; color: #7F1D1D; border-radius: 8px; padding: 12px 16px; margin-bottom: 24px; display: flex; gap: 12px; align-items: center; justify-content: space-between; font-size: 14px; }
+        .loading { color: var(--muted); font-size: 14px; margin-bottom: 16px; }
+
+        @media (max-width: 1100px) {
+            .two-col { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <nav id="sidebar" aria-label="Main">
+        <a href="index.html" id="brand">TC Pipeline</a>
+        <a href="index.html" aria-current="page">Dashboard</a>
+        <a href="add.html">New Deal</a>
+        <a href="transactions.html">Transactions</a>
+        <a href="analyzer.html">Analyzer</a>
+        <a href="settings.html">Settings</a>
+    </nav>
+
+    <main id="main">
+        <!-- Header: greeting, one-line summary, refresh -->
+        <div class="page-head">
+            <div>
+                <h1>Dashboard</h1>
+                <p id="greeting"></p>
+                <p id="summary"></p>
+            </div>
+            <div class="head-actions">
+                <span id="updated"></span>
+                <button type="button" class="btn" id="refreshBtn">Refresh</button>
+            </div>
+        </div>
+
+        <!-- Loading / error messages show up here -->
+        <div id="status" role="status" aria-live="polite"></div>
+
+        <!-- Stat cards -->
+        <div id="stats">
+            <div class="card">
+                <h2 id="statClosing">0</h2>
+                <p>Closing in 7 Days</p>
+                <small id="statClosingHint"></small>
+            </div>
+            <div class="card">
+                <h2 id="statOverdue">0</h2>
+                <p>Overdue Deadlines</p>
+                <small id="statOverdueHint"></small>
+            </div>
+            <div class="card">
+                <h2 id="statRisk">0</h2>
+                <p>High Risk Deals</p>
+                <small id="statRiskHint"></small>
+            </div>
+            <div class="card">
+                <h2 id="statPastDue">0</h2>
+                <p>Past-Due Closings</p>
+                <small id="statPastDueHint"></small>
+            </div>
+            <div class="card">
+                <h2 id="statPipeline">0</h2>
+                <p>Active Deals</p>
+                <small id="statPipelineHint"></small>
+            </div>
+        </div>
+
+        <!-- Time-sensitive stuff first: what needs action + what is coming up -->
+        <div class="two-col">
+            <section class="panel" aria-labelledby="attnTitle">
+                <h2 id="attnTitle">Needs Attention</h2>
+                <p class="sub">Overdue deadlines, blockers and closings that have passed.</p>
+                <ul id="attentionList" class="attn-list"></ul>
+                <div class="panel-foot" id="attentionFoot"></div>
+            </section>
+
+            <section class="panel" aria-labelledby="upTitle">
+                <h2 id="upTitle">Upcoming Deadlines</h2>
+                <p class="sub">Next 30 days. Deadlines whose milestone is already checked off are hidden.</p>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th scope="col">Due</th>
+                                <th scope="col">File ID</th>
+                                <th scope="col">Type</th>
+                                <th scope="col">In</th>
+                            </tr>
+                        </thead>
+                        <tbody id="deadlinesTableBody"></tbody>
+                    </table>
+                </div>
+                <div class="panel-foot" id="deadlinesFoot"></div>
+            </section>
+        </div>
+
+        <!-- Active deals -->
+        <section class="panel" aria-labelledby="dealsTitle">
+            <h2 id="dealsTitle">Active Deals</h2>
+            <p class="sub">Closed and terminated deals are hidden.</p>
+
+            <div id="filters">
+                <label class="sr-only" for="dealSearch">Search deals</label>
+                <input type="search" id="dealSearch" placeholder="Search file ID, address or client">
+                <label class="sr-only" for="riskFilter">Filter by risk</label>
+                <select id="riskFilter">
+                    <option value="">All risk levels</option>
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                </select>
+                <label class="sr-only" for="sortBy">Sort deals</label>
+                <select id="sortBy">
+                    <option value="closing">Sort: Closing date</option>
+                    <option value="risk">Sort: Risk</option>
+                    <option value="progress">Sort: Fewest milestones done</option>
+                </select>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th scope="col">File ID</th>
+                            <th scope="col">Property</th>
+                            <th scope="col">Stage</th>
+                            <th scope="col">Closing</th>
+                            <th scope="col">Milestones</th>
+                            <th scope="col">Risk</th>
+                            <th scope="col">Next Action</th>
+                            <th scope="col">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dashboardTableBody"></tbody>
+                </table>
+            </div>
+            <div class="panel-foot" id="dealsFoot"></div>
+        </section>
+
+        <!-- Deals with missing / bad data (only shown when there is something to fix) -->
+        <details class="panel" id="issuesPanel" hidden>
+            <summary id="issuesSummary"></summary>
+            <ul id="issuesList"></ul>
+        </details>
+    </main>
+</div>
+
+<!-- app.js still supplies loadData() and getTransactions(). Everything else lives below. -->
+<script src="./src/assets/app.js"></script>
+<script>
+(function () {
+    'use strict';
+
+    // ---------- settings you may want to tweak ----------
+    const SOON_DAYS = 7;          // "closing soon" window (also the High-risk window)
+    const WATCH_DAYS = 14;        // Medium-risk window
+    const UPCOMING_WINDOW = 30;   // how far ahead the Upcoming Deadlines list looks
+    const DEALS_PAGE_SIZE = 8;    // rows shown before "Show all"
+    const ATTENTION_PAGE_SIZE = 6;
+    const DEADLINES_PAGE_SIZE = 8;
+    const STALE_AFTER_MS = 5 * 60 * 1000; // reload when the tab is reopened after 5 min
+
+    // The six checkboxes on a deal. Same fields the old dashboard used.
+    const MILESTONES = [
+        { field: 'earnestMoneyReceived',  label: 'Earnest money' },
+        { field: 'inspectionComplete',    label: 'Inspection' },
+        { field: 'appraisalReceived',     label: 'Appraisal' },
+        { field: 'titleClear',            label: 'Title clear' },
+        { field: 'insuranceConfirmed',    label: 'Insurance' },
+        { field: 'clearToCloseConfirmed', label: 'Clear to close' }
+    ];
+
+    // Each deadline date, and the checkbox that means "this one is handled".
+    // A deadline only counts as overdue if its checkbox is still unchecked.
+    // (Financing has no checkbox of its own, so "Clear to close" is used.)
+    const DEADLINES = [
+        { field: 'emdDueDate',                   label: 'EMD',       doneField: 'earnestMoneyReceived' },
+        { field: 'inspectionDeadline',           label: 'Inspection', doneField: 'inspectionComplete' },
+        { field: 'appraisalDeadline',            label: 'Appraisal',  doneField: 'appraisalReceived' },
+        { field: 'financingContingencyDeadline', label: 'Financing',  doneField: 'clearToCloseConfirmed' }
+    ];
+
+    const RANK = { Low: 0, Medium: 1, High: 2 };
+    const $ = id => document.getElementById(id);
+
+    const state = {
+        deals: [],          // analyzed active deals
+        deadlines: [],      // flat list of every deadline across active deals
+        search: '',
+        risk: '',
+        sort: 'closing',
+        showAllDeals: false,
+        showAllAttention: false,
+        showAllDeadlines: false,
+        loadedAt: null
+    };
+
+    // ---------- small helpers ----------
+
+    // Escapes text before it goes into innerHTML so a deal named <script> can't run code.
+    function esc(value) {
+        return String(value == null ? '' : value).replace(/[&<>"']/g, c =>
+            ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    function plural(n, word) { return n + ' ' + word + (n === 1 ? '' : 's'); }
+
+    // Checkbox values can arrive as true, 1, "1" or "true" depending on the backend.
+    // The old code used !value, which treats the string "0" as checked. This doesn't.
+    function isTrue(v) { return v === true || v === 1 || v === '1' || v === 'true'; }
+
+    // Empty values and MySQL's "0000-00-00" both mean "no date".
+    function isBlank(v) {
+        if (v == null) return true;
+        const s = String(v).trim();
+        return s === '' || /^0000-00-00/.test(s);
+    }
+
+    // Turns "2026-08-04" into a Date at LOCAL midnight. new Date("2026-08-04") is read as UTC,
+    // which shows up as the previous evening in Detroit and throws day counts off by one.
+    // Returns null for blank or invalid dates instead of an Invalid Date (which caused "NaN").
+    function parseDate(v) {
+        if (isBlank(v)) return null;
+        const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(v).trim());
+        if (!m) return null;
+        const y = +m[1], mo = +m[2] - 1, d = +m[3];
+        if (y < 1900) return null;
+        const date = new Date(y, mo, d);
+        return (date.getMonth() === mo && date.getDate() === d) ? date : null;
+    }
+
+    function startOfToday() {
+        const n = new Date();
+        return new Date(n.getFullYear(), n.getMonth(), n.getDate());
+    }
+
+    // Whole calendar days from today. Negative = in the past. Math.round absorbs DST (23/25-hour days).
+    function diffDays(date) { return Math.round((date - startOfToday()) / 86400000); }
+
+    function fmtDate(date) {
+        return date ? date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+    }
+
+    function fmtShort(date) {
+        return date ? date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—';
+    }
+
+    function relative(days) {
+        if (days === null) return '—';
+        if (days === 0) return 'Today';
+        if (days === 1) return 'Tomorrow';
+        if (days === -1) return 'Yesterday';
+        return days > 0 ? 'In ' + days + ' days' : -days + ' days ago';
+    }
+
+    function parseMoney(v) {
+        const n = parseFloat(String(v == null ? '' : v).replace(/[^0-9.\-]/g, ''));
+        return isFinite(n) ? n : 0;
+    }
+
+    function money(n) {
+        return n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+    }
+
+    function moneyCompact(n) {
+        return n.toLocaleString('en-US', { style: 'currency', currency: 'USD', notation: 'compact', maximumFractionDigits: 1 });
+    }
+
+    function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+    // Sorts nulls (missing dates) to the bottom instead of letting NaN scramble the order.
+    function cmpNullLast(a, b) {
+        if (a === null && b === null) return 0;
+        if (a === null) return 1;
+        if (b === null) return -1;
+        return a - b;
+    }
+
+    // ---------- analysis: turn a raw transaction into everything the page needs ----------
+
+    function assessRisk(t, closeDays, openCount, overdueCount) {
+        const reasons = [];
+        let level = 'Low';
+        function bump(lvl, why) {
+            if (RANK[lvl] > RANK[level]) level = lvl;
+            reasons.push(why);
+        }
+
+        if (closeDays === null) {
+            bump('Medium', 'No closing date set');
+        } else if (closeDays < 0) {
+            bump('High', 'Closing date passed ' + plural(-closeDays, 'day') + ' ago');
+        } else if (closeDays <= SOON_DAYS && openCount >= 2) {
+            bump('High', 'Closes in ' + plural(closeDays, 'day') + ' with ' + openCount + ' open milestones');
+        } else if (closeDays <= WATCH_DAYS && openCount >= 1) {
+            bump('Medium', 'Closes in ' + plural(closeDays, 'day') + ' with ' + openCount + ' open milestone' + (openCount === 1 ? '' : 's'));
+        }
+        if (overdueCount > 0) bump('Medium', plural(overdueCount, 'overdue deadline'));
+
+        // A risk level picked by hand on the deal always wins, same as before.
+        const manualRaw = String(t.riskLevel == null ? '' : t.riskLevel).trim().toLowerCase();
+        const manual = RANK[cap(manualRaw)] !== undefined ? cap(manualRaw) : null;
+        return {
+            level: manual || level,
+            auto: level,
+            manual: manual && manual !== level,
+            reason: reasons.length ? reasons.join(' · ') : 'On track'
+        };
+    }
+
+    function analyze(t) {
+        const closeDate = parseDate(t.closingDate);
+        const closeDays = closeDate ? diffDays(closeDate) : null;
+
+        const openMilestones = MILESTONES.filter(m => !isTrue(t[m.field])).map(m => m.label);
+        const doneCount = MILESTONES.length - openMilestones.length;
+
+        const deadlines = [];
+        const issues = [];
+        DEADLINES.forEach(d => {
+            const raw = t[d.field];
+            if (isBlank(raw)) return;
+            const date = parseDate(raw);
+            if (!date) { issues.push(d.label + ' date looks invalid ("' + raw + '")'); return; }
+            deadlines.push({ type: d.label, date: date, days: diffDays(date), done: isTrue(t[d.doneField]) });
+        });
+        const overdue = deadlines.filter(d => !d.done && d.days < 0);
+
+        if (isBlank(t.propertyAddress)) issues.push('No property address');
+        if (!closeDate) issues.push(isBlank(t.closingDate) ? 'No closing date' : 'Closing date looks invalid ("' + t.closingDate + '")');
+
+        const risk = assessRisk(t, closeDays, openMilestones.length, overdue.length);
+        const id = String(t.fileID == null ? '' : t.fileID);
+
+        return {
+            raw: t,
+            id: id,
+            address: isBlank(t.propertyAddress) ? '' : String(t.propertyAddress),
+            stage: String(t.stage || '').trim().toLowerCase(),
+            closeDate: closeDate,
+            closeDays: closeDays,
+            openMilestones: openMilestones,
+            doneCount: doneCount,
+            deadlines: deadlines,
+            overdue: overdue,
+            risk: risk.level,
+            riskManual: risk.manual,
+            riskReason: risk.reason,
+            nextAction: String(t.nextAction || '').trim(),
+            nextActionDate: parseDate(t.nextActionDue),
+            blocker: String(t.blocker || '').trim(),
+            assignee: String(t.assignedTo || '').trim(),
+            buyer: String(t.buyerName || '').trim(),
+            seller: String(t.sellerName || '').trim(),
+            price: parseMoney(t.purchasePrice) || parseMoney(t.listingPrice),
+            issues: issues,
+            haystack: [id, t.propertyAddress, t.buyerName, t.sellerName, t.assignedTo, t.mlsNumber]
+                .map(x => String(x == null ? '' : x).toLowerCase()).join(' ')
+        };
+    }
+
+    function isClosedStage(t) {
+        const s = String(t.stage || '').trim().toLowerCase();
+        return s === 'closed' || s === 'terminated';
+    }
+
+    function compute(transactions) {
+        // Only active deals feed the dashboard. (The old version still listed deadlines from closed deals.)
+        state.deals = transactions.filter(t => !isClosedStage(t)).map(analyze);
+        state.deadlines = [];
+        state.deals.forEach(a => a.deadlines.forEach(d => state.deadlines.push({ deal: a, type: d.type, date: d.date, days: d.days, done: d.done })));
+    }
+
+    // ---------- rendering ----------
+
+    function renderGreeting() {
+        let name = 'there';
+        try {
+            const settings = (typeof loadData === 'function') ? loadData('tcSettings') : null;
+            const first = settings && settings.fullName ? String(settings.fullName).trim().split(/\s+/)[0] : '';
+            if (first) name = first;
+        } catch (e) { /* bad saved settings: just use "there" */ }
+
+        const now = new Date();
+        const hour = now.getHours();
+        let timeOfDay = 'Good morning';
+        if (hour >= 17) timeOfDay = 'Good evening';
+        else if (hour >= 12) timeOfDay = 'Good afternoon';
+
+        const dayText = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+        $('greeting').textContent = timeOfDay + ', ' + name + '. Here\u2019s your pipeline for ' + dayText + '.';
+    }
+
+    function setStat(id, value, hint, alert) {
+        $(id).textContent = value;
+        $(id + 'Hint').textContent = hint;
+        $(id).closest('.card').classList.toggle('alert', !!alert);
+    }
+
+    function renderStats() {
+        const deals = state.deals;
+
+        const closingSoon = deals.filter(a => a.closeDays !== null && a.closeDays >= 0 && a.closeDays <= SOON_DAYS);
+        const next = deals.filter(a => a.closeDays !== null && a.closeDays >= 0)
+            .sort((a, b) => a.closeDays - b.closeDays)[0];
+        setStat('statClosing', closingSoon.length,
+            next ? 'Next: ' + next.id + ' \u00b7 ' + fmtShort(next.closeDate) : 'No upcoming closings', false);
+
+        const overdueDeadlines = deals.reduce((n, a) => n + a.overdue.length, 0);
+        const dealsWithOverdue = deals.filter(a => a.overdue.length > 0).length;
+        setStat('statOverdue', overdueDeadlines,
+            overdueDeadlines ? 'across ' + plural(dealsWithOverdue, 'deal') : 'Nothing overdue', overdueDeadlines > 0);
+
+        const high = deals.filter(a => a.risk === 'High').length;
+        setStat('statRisk', high, 'of ' + plural(deals.length, 'active deal'), high > 0);
+
+        const pastDue = deals.filter(a => a.closeDays !== null && a.closeDays < 0).length;
+        setStat('statPastDue', pastDue,
+            pastDue ? 'Update the stage or closing date' : 'None', pastDue > 0);
+
+        const volume = deals.reduce((n, a) => n + a.price, 0);
+        setStat('statPipeline', deals.length, volume ? moneyCompact(volume) + ' in contracts' : 'No prices entered', false);
+
+        const parts = [plural(deals.length, 'active deal'), high + ' high risk', plural(overdueDeadlines, 'overdue deadline')];
+        $('summary').textContent = parts.join(' \u00b7 ');
+    }
+
+    function dealLink(a) {
+        return '<a href="transactions.html">' + esc(a.id) + '</a>';
+    }
+
+    function renderAttention() {
+        const items = [];
+        state.deals.forEach(a => {
+            a.overdue.forEach(d => items.push({
+                weight: 3, deal: a, tag: 'Overdue', cls: 'high', order: d.days,
+                text: d.type + ' deadline was ' + fmtDate(d.date),
+                meta: plural(-d.days, 'day') + ' overdue'
+            }));
+            if (a.closeDays !== null && a.closeDays < 0) items.push({
+                weight: 3, deal: a, tag: 'Past due', cls: 'high', order: a.closeDays,
+                text: 'Closing date ' + fmtDate(a.closeDate) + ' has passed',
+                meta: 'Update the stage or closing date, or close/terminate the file'
+            });
+            if (a.blocker) items.push({
+                weight: 2, deal: a, tag: 'Blocked', cls: 'medium', order: 0,
+                text: a.blocker, meta: a.nextAction ? 'Next: ' + a.nextAction : ''
+            });
+        });
+        // Worst first; within a type, the longest-outstanding first.
+        items.sort((x, y) => y.weight - x.weight || x.order - y.order);
+
+        const list = $('attentionList');
+        const foot = $('attentionFoot');
+        if (items.length === 0) {
+            list.innerHTML = '<li class="empty">Nothing needs attention right now.</li>';
+            foot.innerHTML = '';
+            return;
+        }
+
+        const shown = state.showAllAttention ? items : items.slice(0, ATTENTION_PAGE_SIZE);
+        list.innerHTML = shown.map(i =>
+            '<li>' +
+                '<span class="badge ' + i.cls + '">' + i.tag + '</span>' +
+                '<div class="attn-main">' + dealLink(i.deal) + ' \u2014 ' + esc(i.deal.address || 'No address') +
+                    '<span class="attn-meta">' + esc(i.text) + (i.meta ? ' \u00b7 ' + esc(i.meta) : '') + '</span>' +
+                '</div>' +
+            '</li>').join('');
+
+        foot.innerHTML = footer(shown.length, items.length, 'showAllAttention', 'items');
+    }
+
+    function renderDeadlines() {
+        const upcoming = state.deadlines
+            .filter(d => !d.done && d.days >= 0 && d.days <= UPCOMING_WINDOW)
+            .sort((a, b) => a.date - b.date);
+
+        const tbody = $('deadlinesTableBody');
+        const foot = $('deadlinesFoot');
+        if (upcoming.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="empty">No open deadlines in the next ' + UPCOMING_WINDOW + ' days.</td></tr>';
+            foot.innerHTML = '';
+            return;
+        }
+
+        const shown = state.showAllDeadlines ? upcoming : upcoming.slice(0, DEADLINES_PAGE_SIZE);
+        tbody.innerHTML = shown.map(d => {
+            const cls = d.days <= 2 ? 'late' : d.days <= SOON_DAYS ? 'soon' : '';
+            return '<tr>' +
+                '<td>' + fmtDate(d.date) + '</td>' +
+                '<td>' + dealLink(d.deal) + '</td>' +
+                '<td>' + esc(d.type) + '</td>' +
+                '<td class="' + cls + '">' + relative(d.days) + '</td>' +
+            '</tr>';
+        }).join('');
+        foot.innerHTML = footer(shown.length, upcoming.length, 'showAllDeadlines', 'deadlines');
+    }
+
+    function visibleDeals() {
+        const q = state.search.trim().toLowerCase();
+        const list = state.deals.filter(a =>
+            (!state.risk || a.risk.toLowerCase() === state.risk) &&
+            (!q || a.haystack.indexOf(q) !== -1));
+
+        const sorters = {
+            closing:  (a, b) => cmpNullLast(a.closeDays, b.closeDays),
+            risk:     (a, b) => RANK[b.risk] - RANK[a.risk] || cmpNullLast(a.closeDays, b.closeDays),
+            progress: (a, b) => a.doneCount - b.doneCount || cmpNullLast(a.closeDays, b.closeDays)
+        };
+        return list.sort(sorters[state.sort] || sorters.closing);
+    }
+
+    function closingCell(a) {
+        if (a.closeDays === null) return '<td>\u2014</td>';
+        let rel, cls = '';
+        if (a.closeDays < 0) { rel = plural(-a.closeDays, 'day') + ' past due'; cls = 'late'; }
+        else if (a.closeDays === 0) { rel = 'Today'; cls = 'late'; }
+        else if (a.closeDays <= SOON_DAYS) { rel = 'In ' + plural(a.closeDays, 'day'); cls = 'soon'; }
+        else { rel = 'In ' + plural(a.closeDays, 'day'); }
+        return '<td>' + fmtDate(a.closeDate) + '<span class="sub-line ' + cls + '">' + rel + '</span></td>';
+    }
+
+    function milestoneCell(a) {
+        const total = MILESTONES.length;
+        const pct = Math.round(a.doneCount / total * 100);
+        const done = a.doneCount === total;
+        const title = done ? 'All milestones complete' : 'Still open: ' + a.openMilestones.join(', ');
+        return '<td title="' + esc(title) + '">' +
+            '<div class="progress' + (done ? ' done' : '') + '" role="img" aria-label="' + a.doneCount + ' of ' + total + ' milestones complete">' +
+                '<span style="width:' + pct + '%"></span></div>' +
+            a.doneCount + '/' + total + ' done' +
+        '</td>';
+    }
+
+    function dealRow(a) {
+        const people = [a.buyer && 'Buyer: ' + a.buyer, a.seller && 'Seller: ' + a.seller].filter(Boolean).join(' \u00b7 ');
+        const priceText = a.price ? money(a.price) : '';
+        const subParts = [priceText, people].filter(Boolean).join(' \u00b7 ');
+
+        let nextCell = a.nextAction ? esc(a.nextAction) : '<span class="sub-line">\u2014</span>';
+        if (a.nextActionDate) {
+            const nd = diffDays(a.nextActionDate);
+            nextCell += '<span class="sub-line ' + (nd < 0 ? 'late' : '') + '">Due ' + fmtShort(a.nextActionDate) + (nd < 0 ? ' (overdue)' : '') + '</span>';
+        }
+        if (a.blocker) nextCell += '<span class="blocker">Blocked: ' + esc(a.blocker) + '</span>';
+
+        const id = encodeURIComponent(a.id);
+        return '<tr>' +
+            '<td><strong>' + esc(a.id) + '</strong>' +
+                (a.assignee ? '<span class="sub-line">' + esc(a.assignee) + '</span>' : '') + '</td>' +
+            '<td class="wrap">' + (a.address ? esc(a.address) : '<span class="sub-line">No address</span>') +
+                (subParts ? '<span class="sub-line">' + esc(subParts) + '</span>' : '') + '</td>' +
+            '<td><span class="badge stage">' + esc(a.stage || '\u2014') + '</span></td>' +
+            closingCell(a) +
+            milestoneCell(a) +
+            '<td title="' + esc(a.riskReason) + '"><span class="badge ' + a.risk.toLowerCase() + '">' + a.risk + '</span>' +
+                (a.riskManual ? '<span class="badge manual" title="Set by hand on the deal. Calculated risk is ' + a.risk + '.">manual</span>' : '') + '</td>' +
+            '<td class="wrap">' + nextCell + '</td>' +
+            // Same destinations as the old page: View goes to Transactions, Edit opens the deal form.
+            '<td><a href="transactions.html">View</a> \u00b7 <a href="add.html?fileID=' + id + '">Edit</a></td>' +
+        '</tr>';
+    }
+
+    function renderDeals() {
+        const all = visibleDeals();
+        const tbody = $('dashboardTableBody');
+        const foot = $('dealsFoot');
+
+        if (all.length === 0) {
+            const filtered = state.search || state.risk;
+            tbody.innerHTML = '<tr><td colspan="8" class="empty">' +
+                (filtered ? 'No deals match your filters.' : 'No active deals.') + '</td></tr>';
+            foot.innerHTML = '';
+            return;
+        }
+        const shown = state.showAllDeals ? all : all.slice(0, DEALS_PAGE_SIZE);
+        tbody.innerHTML = shown.map(dealRow).join('');
+        foot.innerHTML = footer(shown.length, all.length, 'showAllDeals', 'deals');
+    }
+
+    // "Showing 6 of 14 items  [Show all]" footer shared by the three panels.
+    function footer(shown, total, stateKey, noun) {
+        if (total <= shown && !state[stateKey]) return '<span>' + plural(total, noun.replace(/s$/, '')) + '</span>';
+        const label = state[stateKey] ? 'Show fewer' : 'Show all ' + total;
+        return '<span>Showing ' + shown + ' of ' + total + ' ' + noun + '</span>' +
+               '<button type="button" class="btn-link" data-toggle="' + stateKey + '">' + label + '</button>';
+    }
+
+    function renderIssues() {
+        const withIssues = state.deals.filter(a => a.issues.length > 0);
+        const panel = $('issuesPanel');
+        panel.hidden = withIssues.length === 0;
+        if (withIssues.length === 0) return;
+        $('issuesSummary').textContent = 'Data to fix (' + plural(withIssues.length, 'deal') + ')';
+        $('issuesList').innerHTML = withIssues.map(a =>
+            '<li><strong>' + esc(a.id) + '</strong>: ' + a.issues.map(esc).join('; ') +
+            ' \u2014 <a href="add.html?fileID=' + encodeURIComponent(a.id) + '">Edit</a></li>').join('');
+    }
+
+    function renderAll() {
+        renderGreeting();
+        renderStats();
+        renderAttention();
+        renderDeadlines();
+        renderDeals();
+        renderIssues();
+        $('updated').textContent = 'Updated ' + state.loadedAt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    }
+
+    // ---------- loading ----------
+
+    function setStatus(kind, message) {
+        const box = $('status');
+        if (kind === 'loading') {
+            box.innerHTML = '<div class="loading">Loading your pipeline\u2026</div>';
+        } else if (kind === 'error') {
+            box.innerHTML = '<div class="error-banner"><span><strong>Couldn\u2019t load transactions.</strong> ' + esc(message) +
+                '</span><button type="button" class="btn" data-retry>Try again</button></div>';
+        } else {
+            box.innerHTML = '';
+        }
+    }
+
+    async function load() {
+        const btn = $('refreshBtn');
+        btn.disabled = true;
+        setStatus('loading');
+        try {
+            if (typeof getTransactions !== 'function') throw new Error('app.js did not load, so getTransactions() is missing.');
+            const data = await getTransactions();
+            if (!Array.isArray(data)) throw new Error('The server did not send back a list of transactions.');
+            compute(data);
+            state.loadedAt = new Date();
+            setStatus('ok');
+            renderAll();
+        } catch (err) {
+            console.error(err);
+            setStatus('error', err && err.message ? err.message : 'Check that the server is running.');
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    // ---------- events ----------
+
+    $('refreshBtn').addEventListener('click', load);
+    $('dealSearch').addEventListener('input', e => { state.search = e.target.value; state.showAllDeals = false; renderDeals(); });
+    $('riskFilter').addEventListener('change', e => { state.risk = e.target.value; state.showAllDeals = false; renderDeals(); });
+    $('sortBy').addEventListener('change', e => { state.sort = e.target.value; renderDeals(); });
+
+    // One listener handles every "Show all / Show fewer" and "Try again" button.
+    document.addEventListener('click', e => {
+        const toggle = e.target.closest('[data-toggle]');
+        if (toggle) {
+            const key = toggle.getAttribute('data-toggle');
+            state[key] = !state[key];
+            renderAttention(); renderDeadlines(); renderDeals();
+        } else if (e.target.closest('[data-retry]')) {
+            load();
+        }
+    });
+
+    // Day counts are "relative to today", so refresh them if the tab sat open for a while.
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && state.loadedAt && Date.now() - state.loadedAt > STALE_AFTER_MS) load();
+    });
+
+    renderGreeting();
+    load();
+})();
+</script>
+</body>
+</html>
