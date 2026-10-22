@@ -1,0 +1,95 @@
+import { useState } from 'react';
+import "./style.css";
+import "./app.js";
+
+function Dashboard() {
+
+    // load greetings message
+    function greetingsMSG() {
+        const settings = loadData('tcSettings');
+        const name = settings ? settings.fullName.split(' ')[0] : 'there';
+        const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+        const day = days[Date().getDay()];
+        let timeOfDay = 'Good morning';
+        if (Date().getHours() >= 12 && Date().getHours() < 17) timeOfDay = 'Good afternoon';
+        else if (Date().getHours() >= 17) timeOfDay = 'Good evening';
+        document.getElementById('greeting').innerHTML =
+        timeOfDay + ', ' + name + ' — here\'s your pipeline for ' + day + '.';
+    }
+    greetingsMSG();
+    
+
+    // dashboard UI
+    return (
+        <>
+            <div id="app">
+                <div id="sidebar">
+                    <a href="index.html" id="brand">TC Pipeline</a>
+                    <a href="index.html">Dashboard</a>
+                    <a href="add.html">New Deal</a>
+                    <a href="transactions.html">Transactions</a>
+                    <a href="analyzer.html">Analyzer</a>
+                    <a href="settings.html">Settings</a>
+
+
+                </div>
+
+                <div id="main">
+                <h1>Dashboard</h1>
+                    <p id="greeting"></p>
+
+                    <div id="stats">
+                        <div class="card">
+                            <h2 id="statClosing">0</h2>
+                            <p>Closing This Week</p>
+                        </div>
+
+                        <div class="card">
+                            <h2 id="statOverdue">0</h2>
+                            <p>Overdue Milestones</p>
+                        </div>
+
+                        <div class="card">
+                            <h2 id="statRisk">0</h2>
+                            <p>High Risk Deals</p>
+                        </div>
+
+                    </div>
+
+                    <div id="table">
+                        <h2>Active Deals</h2>
+                        
+                        {/* Active Deals table */}
+                        <table>
+                            <tr>
+                                <th>File ID</th>
+                                <th>Address</th>
+                                <th>Stage</th>
+                                <th>Closing Date</th>
+                                <th>Days to Close</th>
+                                <th>Risk</th>
+                                <th>Actions</th>
+                            </tr>
+                            <tbody id="dashboardTableBody"></tbody>
+                        </table>
+
+                        {/* Upcoming Deadlines table */}
+                        <table>
+                            <tr>
+                                <th>File ID</th>
+                                <th>Deadline Type</th>
+                                <th>Due Date</th>
+                                <th>Days Remaining</th>
+                            </tr>
+                            <tbody id="deadlinesTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+
+
+            </div>
+        </>
+    )
+
+}
