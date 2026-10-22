@@ -1,74 +1,77 @@
 import { useState } from 'react'   
 import "./loginStyle.css"
 
-function login(){
+function login(event){
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [message, setMessage] = useState('');
+    const [messageClass, setMessageClass] = useState('');
 
     function onLoginSubmit(event) {
-    const MOCK_USERNAME = "admin";
-    const MOCK_PASSWORD = "admin";
+        event.preventDefault(); // Prevent the default form submission behavior
 
-    document.getElementById('loginForm').addEventListener('submit', function(event) {
-    event.preventDefault();
+        const usernameInput = document.getElementById('username').value;
+        const passwordInput = document.getElementById('password').value;
+        const messageDiv = document.getElementById('message');
 
-    const usernameInput = document.getElementById('username').value;
-    const passwordInput = document.getElementById('password').value;
-    const messageDiv = document.getElementById('message');
-
-    if (usernameInput === MOCK_USERNAME && passwordInput === MOCK_PASSWORD) {
-        messageDiv.textContent = "Login successful! Welcome back.";
-        messageDiv.className = "success";
-    window.location.href = 'index.html';
+        if (usernameInput === "admin" && passwordInput === "admin") {
+            setMessage("Login successful! Welcome back.");
+            setMessageClass("success");
+            setTimeout(() => {
+                window.location.href = '/pages/index.html';
+            }, 1000); // Redirect after 1 second
         } else {
-        messageDiv.textContent = "Invalid username or password.";
-        messageDiv.className = "error";
+            setMessage("Invalid username or password.");
+            setMessageClass("error");
         }
-    });
-}
+    }
 
-    return(
-        <>
-        <head>
-            <meta charset="UTF-8"></meta>
-            <meta name="viewport" content="width=device-width, initial-scale=1.0"></meta>
-            <title>Login Demo</title>
+    // return(
+    //     <>
+    //         <head>
+    //             <meta charset="UTF-8"></meta>
+    //             <meta name="viewport" content="width=device-width, initial-scale=1.0"></meta>
+    //             <title>Login Demo</title>
 
-        </head>
+    //         </head>
 
-        {/* Body of the HTML document */}
-        <body>
-            <div class="login-container">
-            <h2>Login Demo</h2>
-            <form id="loginForm">
-                <div class="input-group">
-                    <label for="username">Username</label>
-                    <input 
-                        type="text" 
-                        id="username" 
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        required
-                    />
+    //         {/* Body of the HTML document */}
+    //         <body>
+                return(
+                    <>
+                <div class="login-container">
+                <h2>Login Demo</h2>
+                <form id="loginForm" onSubmit={onLoginSubmit}>
+                    <div class="input-group">
+                        <label for="username">Username</label>
+                        <input 
+                            type="text" 
+                            id="username" 
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            required
+                        />
+                    </div>
+                    <div class="input-group">
+                        <label for="password">Password</label>
+                        <input 
+                            type="password" 
+                            id="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+
+                        />
+                    </div>
+                    <button type="submit">Sign In</button>
+                </form>
+                <div id="message"></div>
                 </div>
-                <div class="input-group">
-                    <label for="password">Password</label>
-                    <input 
-                        type="password" 
-                        id="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-
-                    />
-                </div>
-                <button type="submit" onClick={onLoginSubmit}>Sign In</button>
-            </form>
-            <div id="message"></div>
-            </div>
-        </body>
-    </>
-    )
+                </>
+                );
+            {/* </body>
+        </>
+    ) */}
 }
 
 export default login
