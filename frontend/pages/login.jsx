@@ -26,52 +26,38 @@ function login(event){
         }
     }
 
-    // return(
-    //     <>
-    //         <head>
-    //             <meta charset="UTF-8"></meta>
-    //             <meta name="viewport" content="width=device-width, initial-scale=1.0"></meta>
-    //             <title>Login Demo</title>
+    return(
+        <>
+    <div class="login-container">
+    <h2>Login Demo</h2>
+    <form id="loginForm" onSubmit={onLoginSubmit}>
+        <div class="input-group">
+            <label for="username">Username</label>
+            <input 
+                type="text" 
+                id="username" 
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+            />
+        </div>
+        <div class="input-group">
+            <label for="password">Password</label>
+            <input 
+                type="password" 
+                id="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
 
-    //         </head>
-
-    //         {/* Body of the HTML document */}
-    //         <body>
-                return(
-                    <>
-                <div class="login-container">
-                <h2>Login Demo</h2>
-                <form id="loginForm" onSubmit={onLoginSubmit}>
-                    <div class="input-group">
-                        <label for="username">Username</label>
-                        <input 
-                            type="text" 
-                            id="username" 
-                            value={username}
-                            onChange={(e) => setUsername(e.target.value)}
-                            required
-                        />
-                    </div>
-                    <div class="input-group">
-                        <label for="password">Password</label>
-                        <input 
-                            type="password" 
-                            id="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-
-                        />
-                    </div>
-                    <button type="submit">Sign In</button>
-                </form>
-                <div id="message"></div>
-                </div>
-                </>
-                );
-            {/* </body>
-        </>
-    ) */}
+            />
+        </div>
+        <button type="submit">Sign In</button>
+    </form>
+    <div id="message"></div>
+    </div>
+    </>
+    );
 }
 
 export default login
