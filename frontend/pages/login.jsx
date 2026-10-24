@@ -28,35 +28,36 @@ function login(event){
 
     return(
         <>
-    <div class="login-container">
-    <h2>Login Demo</h2>
-    <form id="loginForm" onSubmit={onLoginSubmit}>
-        <div class="input-group">
-            <label for="username">Username</label>
-            <input 
-                type="text" 
-                id="username" 
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-            />
-        </div>
-        <div class="input-group">
-            <label for="password">Password</label>
-            <input 
-                type="password" 
-                id="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
+            <title>Login Demo</title>
+            <div class="login-container">
+            <h2>Login Demo</h2>
+            <form id="loginForm" onSubmit={onLoginSubmit}>
+                <div class="input-group">
+                    <label for="username">Username</label>
+                    <input 
+                        type="text" 
+                        id="username" 
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        required
+                    />
+                </div>
+                <div class="input-group">
+                    <label for="password">Password</label>
+                    <input 
+                        type="password" 
+                        id="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
 
-            />
-        </div>
-        <button type="submit">Sign In</button>
-    </form>
-    <div id="message"></div>
-    </div>
-    </>
+                    />
+                </div>
+                <button type="submit">Sign In</button>
+            </form>
+            <div id="message"></div>
+            </div>
+        </>
     );
 }
 
