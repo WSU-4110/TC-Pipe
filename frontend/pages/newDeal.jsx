@@ -118,12 +118,18 @@ function newDeal() {
                     <form onSubmit={handleSubmit} className="deal-form">
                         <fieldset>
                             <legend>Basic Info</legend>
-                            <div class="field-grid">
-                                <div class="field">
+                            <div className="field-grid">
+                                <div className="field">
                                     <label for="fileID">File ID</label>
-                                    <input type="text" id="fileID"/>
+                                    <input 
+                                        type="text" 
+                                        id="fileID"
+                                        value={formData.fileID}
+                                        onChange={handleChange}
+                                        placeholder="Enter File ID"
+                                    />
                                 </div>
-                                <div class="field">
+                                <div className="field">
                                     <label for="side">Side</label>
                                     <select id="side">
                                         <option value="" selected>Select Side</option>
@@ -132,7 +138,7 @@ function newDeal() {
                                         <option value="dual">Dual Agency</option>
                                     </select>
                                 </div>
-                                <div class="field">
+                                <div className="field">
                                     <label for="propertyType">Property Type</label>
                                     <select id="propertyType">
                                         <option value="" selected>Select Property Type</option>
@@ -143,7 +149,7 @@ function newDeal() {
                                         <option value="landOrLot">Land/Lot</option>
                                     </select>
                                 </div>
-                                <div class="field">
+                                <div className="field">
                                     <label for="transactionType">Transaction Type</label>
                                     <select id="transactionType">
                                         <option value="" selected>Select Type</option>
@@ -153,7 +159,7 @@ function newDeal() {
                                         <option value="newConstruction">New Construction</option>
                                     </select>
                                 </div>
-                                <div class="field">
+                                <div className="field">
                                     <label for="stage">Stage</label>
                                     <select id="stage">
                                         <option value="" selected>Select Stage</option>
@@ -167,31 +173,46 @@ function newDeal() {
                                         <option value="terminated">Terminated</option>
                                     </select>
                                 </div>
-                                <div class="field">
+                                <div className="field">
                                     <label for="mlsNumber">MLS Number</label>
-                                    <input type="text" id="mlsNumber"/>
+                                    <input 
+                                        type="text"
+                                        id="mlsNumber"
+                                    />
                                 </div>
                             </div>
                         </fieldset>
 
                         <fieldset>
                             <legend>Parties</legend>
-                            <div class="field-grid">
-                                <div class="field">
+                            <div className="field-grid">
+                                <div className="field">
                                     <label for="buyerName">Buyer Name</label>
-                                    <input type="text" id="buyerName"/>
+                                    <input 
+                                        type="text" 
+                                        id="buyerName"
+                                    />
                                 </div>
-                                <div class="field">
+                                <div className="field">
                                     <label for="sellerName">Seller Name</label>
-                                    <input type="text" id="sellerName"/>
+                                    <input 
+                                        type="text" 
+                                        id="sellerName"
+                                    />
                                 </div>
-                                <div class="field">
+                                <div className="field">
                                     <label for="listingAgent">Listing Agent</label>
-                                    <input type="text" id="listingAgent"/>
+                                    <input 
+                                        type="text" 
+                                        id="listingAgent"
+                                    />
                                 </div>
-                                <div class="field">
+                                <div className="field">
                                     <label for="assignee">Assigned To</label>
-                                    <input type="text" id="assignee"/>
+                                    <input 
+                                        type="text" 
+                                        id="assignee"
+                                    />
                                 </div>
                             </div>
                         </fieldset>
@@ -199,96 +220,144 @@ function newDeal() {
                         {/* <!-- DATES & DEADLINES --> */}
                         <fieldset>
                             <legend>Dates & Deadlines</legend>
-                            <div class="field-grid">
-                                <div class="field">
+                            <div className="field-grid">
+                                <div className="field">
                                     <label for="contractDate">Contract Date</label>
-                                    <input type="date" id="contractDate"/>
+                                    <input 
+                                        type="date" 
+                                        id="contractDate"
+                                    />
                                 </div>
-                                <div class="field">
+                                <div className="field">
                                     <label for="closingDate">Closing Date</label>
-                                    <input type="date" id="closingDate"/>
+                                    <input 
+                                        type="date" 
+                                        id="closingDate"
+                                    />
                                 </div>
-                                <div class="field">
+                                <div className="field">
                                     <label for="closingTime">Closing Time</label>
-                                    <input type="time" id="closingTime"/>
+                                    <input 
+                                        type="time" 
+                                        id="closingTime"
+                                    />
                                 </div>
-                                <div class="field">
+                                <div className="field">
                                     <label for="emdDueDate">EMD Due Date</label>
-                                    <input type="date" id="emdDueDate"/>
+                                    <input 
+                                        type="date" 
+                                        id="emdDueDate"
+                                    />
                                 </div>
-                                <div class="field">
+                                <div className="field">
                                     <label for="inspectionDeadline">Inspection Deadline</label>
-                                    <input type="date" id="inspectionDeadline"/>
+                                    <input 
+                                        type="date" 
+                                        id="inspectionDeadline"
+                                    />
                                 </div>
-                                <div class="field">
+                                <div className="field">
                                     <label for="appraisalDeadline">Appraisal Deadline</label>
-                                    <input type="date" id="appraisalDeadline"/>
+                                    <input 
+                                        type="date" 
+                                        id="appraisalDeadline"
+                                    />
                                 </div>
-                                <div class="field">
+                                <div className="field">
                                     <label for="financingContingencyDeadline">Financing Contingency Deadline</label>
-                                    <input type="date" id="financingContingencyDeadline"/>
+                                    <input 
+                                        type="date" 
+                                        id="financingContingencyDeadline"
+                                    />
                                 </div>
                             </div>
                         </fieldset>
 
                         <fieldset>
                             <legend>Location</legend>
-                            <div class="field-grid">
-                                <div class="field">
+                            <div className="field-grid">
+                                <div className="field">
                                     <label for="propertyAddress">Property Address</label>
-                                    <input type="text" id="propertyAddress"/>
+                                    <input 
+                                        type="text" 
+                                        id="propertyAddress"
+                                    />
                                 </div>
-                                <div class="field">
+                                <div className="field">
                                     <label for="closingLocation">Closing Location</label>
-                                    <input type="text" id="closingLocation"/>
+                                    <input 
+                                        type="text" 
+                                        id="closingLocation"
+                                    />
                                 </div>
                             </div>
                         </fieldset>
 
                         <fieldset>
                             <legend>Financials</legend>
-                            <div class="field-grid">
-                                <div class="field">
+                            <div className="field-grid">
+                                <div className="field">
                                     <label for="purchasePrice">Purchase Price ($)</label>
-                                    <input type="number" id="purchasePrice"/>
+                                    <input 
+                                        type="number" 
+                                        id="purchasePrice"
+                                    />
                                 </div>
-                                <div class="field">
+                                <div className="field">
                                     <label for="listingPrice">Listing Price ($)</label>
-                                    <input type="number" id="listingPrice"/>
+                                    <input 
+                                        type="number" 
+                                        id="listingPrice"
+                                    />
                                 </div>
-                                <div class="field">
+                                <div className="field">
                                     <label for="emdAmount">EMD Amount ($)</label>
-                                    <input type="number" id="emdAmount"/>
+                                    <input 
+                                        type="number" 
+                                        id="emdAmount"
+                                    />
                                 </div>
                             </div>
                         </fieldset>
 
                         <fieldset>
                             <legend>Title & Lender</legend>
-                            <div class="field-grid">
-                                <div class="field">
+                            <div className="field-grid">
+                                <div className="field">
                                     <label for="titleCompanyName">Title Company Name</label>
-                                    <input type="text" id="titleCompanyName"/>
+                                    <input 
+                                        type="text" 
+                                        id="titleCompanyName"
+                                    />
                                 </div>
-                                <div class="field">
+                                <div className="field">
                                     <label for="titleCompanyContact">Title Company Contact</label>
-                                    <input type="text" id="titleCompanyContact"/>
+                                    <input 
+                                        type="text" 
+                                        id="titleCompanyContact"
+                                    />
                                 </div>
-                                <div class="field">
+                                <div className="field">
                                     <label for="lenderName">Lender Name</label>
-                                    <input type="text" id="lenderName"/>
+                                    <input 
+                                        type="text" 
+                                        id="lenderName"
+                                    />
                                 </div>
-                                <div class="field">
+                                <div className="field">
                                     <label for="lenderContact">Lender Contact</label>
-                                    <input type="text" id="lenderContact"/>
+                                    <input 
+                                        type="text" 
+                                        id="lenderContact"
+                                    />
                                 </div>
                             </div>
                         </fieldset>
 
                         <fieldset>
                             <legend>Risk & Notes</legend>
-                            <div class="field-grid">
-                                <div class="field">
+                            <div className="field-grid">
+                                <div className="field">
                                     <label for="riskLevel">Risk Level</label>
                                     <select id="riskLevel">
                                         <option value="" selected>Select Risk Level</option>
@@ -297,19 +366,28 @@ function newDeal() {
                                         <option value="high">High</option>
                                     </select>
                                 </div>
-                                <div class="field">
+                                <div className="field">
                                     <label for="nextAction">Next Action</label>
-                                    <input type="text" id="nextAction"/>
+                                    <input 
+                                        type="text" 
+                                        id="nextAction"
+                                    />
                                 </div>
-                                <div class="field">
+                                <div className="field">
                                     <label for="nextActionDue">Next Action Due Date</label>
-                                    <input type="date" id="nextActionDue"/>
+                                    <input 
+                                        type="date" 
+                                        id="nextActionDue"
+                                    />
                                 </div>
-                                <div class="field">
+                                <div className="field">
                                     <label for="blocker">Blocker</label>
-                                    <input type="text" id="blocker"/>
+                                    <input 
+                                        type="text" 
+                                        id="blocker"
+                                    />
                                 </div>
-                                <div class="field" style="grid-column: span 2;">
+                                <div className="field" style="grid-column: span 2;">
                                     <label for="notes">Notes</label>
                                     <textarea id="notes"></textarea>
                                 </div>
@@ -318,29 +396,47 @@ function newDeal() {
 
                         <fieldset>
                             <legend>Milestones</legend>
-                            <div class="milestone-grid">
-                                <div class="milestone-item">
-                                    <input type="checkbox" id="earnestMoneyReceived"/>
+                            <div className="milestone-grid">
+                                <div className="milestone-item">
+                                    <input 
+                                        type="checkbox" 
+                                        id="earnestMoneyReceived"
+                                    />
                                     <label for="earnestMoneyReceived">Earnest Money Received</label>
                                 </div>
-                                <div class="milestone-item">
-                                    <input type="checkbox" id="inspectionComplete"/>
+                                <div className="milestone-item">
+                                    <input 
+                                        type="checkbox" 
+                                        id="inspectionComplete"
+                                    />
                                     <label for="inspectionComplete">Inspection Complete</label>
                                 </div>
-                                <div class="milestone-item">
-                                    <input type="checkbox" id="appraisalReceived"/>
+                                <div className="milestone-item">
+                                    <input 
+                                        type="checkbox" 
+                                        id="appraisalReceived"
+                                    />
                                     <label for="appraisalReceived">Appraisal Received</label>
                                 </div>
-                                <div class="milestone-item">
-                                    <input type="checkbox" id="titleClear"/>
+                                <div className="milestone-item">
+                                    <input 
+                                        type="checkbox" 
+                                        id="titleClear"
+                                    />
                                     <label for="titleClear">Title Clear</label>
                                 </div>
-                                <div class="milestone-item">
-                                    <input type="checkbox" id="insuranceConfirmed"/>
+                                <div className="milestone-item">
+                                    <input 
+                                        type="checkbox" 
+                                        id="insuranceConfirmed"
+                                    />
                                     <label for="insuranceConfirmed">Insurance Confirmed</label>
                                 </div>
-                                <div class="milestone-item">
-                                    <input type="checkbox" id="clearToCloseConfirmed"/>
+                                <div className="milestone-item">
+                                    <input 
+                                        type="checkbox" 
+                                        id="clearToCloseConfirmed"
+                                    />
                                     <label for="clearToCloseConfirmed">Clear to Close Confirmed</label>
                                 </div>
                             </div>

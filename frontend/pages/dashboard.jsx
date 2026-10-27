@@ -38,7 +38,7 @@ function Dashboard() {
                 <div id="sidebar">
                     <a href="/" id="brand">TC Pipeline</a>
                     <a href="/dashboard">Dashboard</a>
-                    <a href="/add">New Deal</a>
+                    <a href="/newDeal">New Deal</a>
                     <a href="/transactions">Transactions</a>
                     <a href="/analyzer">Analyzer</a>
                     <a href="/settings">Settings</a>

@@ -1,8 +1,8 @@
-import {useState} from 'react';
+import {useState, useEffect} from 'react';
 import "./style.css";
 import "./app.js";
 
-function settings () {
+function settings() {
 
     /* wire the form's submit event to saveSettings() in app.js
        e.preventDefault() inside saveSettings stops the page from reloading on submit */
@@ -10,7 +10,9 @@ function settings () {
 
     /* pre-fills  form fields with whatever was saved in localStorage
        runs immediately on page load so the TC never sees any empty fields after saving once */
-    loadSettings();
+    useEffect(() => {
+        loadSettings();
+    }, []);
     
     return (
         <>
@@ -62,3 +64,5 @@ function settings () {
     </>
     )
 }
+
+export default settings;

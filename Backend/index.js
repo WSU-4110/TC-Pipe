@@ -1,19 +1,18 @@
 
-
 const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const mysql = require('mysql');
+const dotenv = require('dotenv');
+dotenv.config();
 
 // ---------- config ----------
-
-const PORT = Number(process.env.PORT) || 3000;
 const DB = {
-    host: process.env.DB_HOST || 'localhost',
-    port: Number(process.env.DB_PORT) || 3306,
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || 'tc_pipeline'
+    host: process.env.host,
+    port: Number(process.env.PORT),
+    user: process.env.USER,
+    password: process.env.PASSWORD,
+    database: process.env.DATABASE
 };
 const FRONTEND_DIR = process.env.FRONTEND_DIR ? path.resolve(process.env.FRONTEND_DIR) : null;
 

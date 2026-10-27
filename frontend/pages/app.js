@@ -1,3 +1,132 @@
+// ==================== SETTINGS FUNCTIONS ==================== //
+// Settings (still uses localStorage since its simple and fast)
+
+function loadSettings() {
+    const settings = loadData('tcSettings');
+    if (settings) {
+        document.getElementById('fullName').value = settings.fullName || '';
+        // || '' means "use the saved value, or fall back to empty string if it doesn't exist"
+        document.getElementById('email').value = settings.email || '';
+        document.getElementById('phoneNumber').value = settings.phoneNumber || '';
+        document.getElementById('companyOrBrokerage').value = settings.companyOrBrokerage || '';
+        document.getElementById('titleOrRole').value = settings.titleOrRole || '';
+        document.getElementById('linkedInUrl').value = settings.linkedInUrl || '';
+    }
+}
+
+
+// ==================== TRANSACTION FUNCTIONS ==================== //
+/*
+* Renders the transactions table with optional filters for search, stage, and risk.
+* @param {string} filter - The search term to filter transactions by File ID or Address.
+* @param {string} stageFilter - The stage to filter transactions by.
+* @param {string} riskFilter - The risk level to filter transactions by.
+* @returns {void} - Asynchronously renders the transactions table.
+*/
+async function renderTransactions(filter = '') {
+    // filter defaults to empty string so the function works with or without a search term
+    const tbody = document.getElementById('transactionTableBody');
+    if (!tbody) return; // exits early if the table doesn't exist on this page
+
+    let transactions = await getTransactions();
+    // await here waits for the API response before trying to display anything
+
+    // apply search filter
+    if (filter) {
+        filter = filter.toLowerCase();
+        transactions = transactions.filter(t =>
+            t.fileID.toLowerCase().includes(filter) ||
+            t.propertyAddress.toLowerCase().includes(filter)
+        );
+        // .filter() returns a new array with only the matching deals
+    }
+
+    // apply stage filter
+    const stageFilter = document.getElementById('stageFilter');
+    if (stageFilter && stageFilter.value) {
+        transactions = transactions.filter(t => t.stage === stageFilter.value);
+    }
+
+    // apply risk filter
+    const riskFilter = document.getElementById('riskFilter');
+    if (riskFilter && riskFilter.value) {
+        transactions = transactions.filter(t =>
+            (t.riskLevel || autoRisk(t)).toLowerCase() === riskFilter.value
+        );
+    }
+
+    if (transactions.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7">No transactions found.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = transactions.map(t => {
+        const days = daysToClose(t.closingDate);
+        const risk = t.riskLevel || autoRisk(t); // uses manual risk if set, otherwise auto-calculates
+        const riskClass = risk === 'High' ? 'risk-high' : risk === 'Medium' ? 'risk-medium' : 'risk-low';
+        return `
+            <tr>
+                <td>${t.fileID}</td>
+                <td>${t.propertyAddress || '—'}</td>
+                <td>${t.stage || '—'}</td>
+                <td>${t.closingDate || '—'}</td>
+                <td>${days}</td>
+                <td class="${riskClass}">${risk}</td>
+                <td>
+                    <a href="#">View</a> |
+                    <a href="add.html?fileID=${t.fileID}">Edit</a> |
+                    <a href="#" onclick="deleteTransaction('${t.fileID}'); return false;">Delete</a> |
+                    <a href="#" onclick="openComposer('${t.fileID}'); return false;">Email</a>
+                </td>
+            </tr>
+        `;
+    }).join('');
+    // .map() builds one <tr> string per transaction, .join('') merges them into one big HTML string
+}
+
+
+/*
+ * Copies the email content from the subject and body fields to the clipboard.
+ * @returns {void} - Asynchronously copies the email to the clipboard.
+*/
+function copyEmail() {
+    const subject = document.getElementById('subjectLine').value;
+    const body = document.getElementById('emailBody').value;
+    const full = 'Subject: ' + subject + '\n\n' + body;
+    navigator.clipboard.writeText(full).then(() => {
+        // navigator.clipboard is the browser's built-in clipboard API
+        // .then() runs after the copy succeeds since it's async
+        alert('Email copied to clipboard!');
+    });
+}
+
+
+/*
+ * Opens the email content in Gmail.
+ * @returns {void} - Opens a new tab with the email pre-filled in Gmail.
+*/
+function openInGmail() {
+    const subject = encodeURIComponent(document.getElementById('subjectLine').value);
+    const body = encodeURIComponent(document.getElementById('emailBody').value);
+    // encodeURIComponent converts spaces and special characters into URL-safe format
+    window.open('https://mail.google.com/mail/?view=cm&su=' + subject + '&body=' + body);
+    // window.open opens a new tab instead of navigating away from the page
+}
+
+
+/*
+ * Opens the email content in Outlook.
+ * @returns {void} - Opens a new tab with the email pre-filled in Outlook.
+*/
+function openInOutlook() {
+    const subject = encodeURIComponent(document.getElementById('subjectLine').value);
+    const body = encodeURIComponent(document.getElementById('emailBody').value);
+    window.open('https://outlook.live.com/mail/0/deeplink/compose?subject=' + subject + '&body=' + body);
+}
+
+
+// ==================== (enter page here) FUNCTIONS ==================== //
+
 // localStorage helpers (still used for settings)
 
 function saveData(key, value) {
@@ -120,70 +249,6 @@ function autoRisk(transaction) {
     if (days !== '—' && days <= 14 && incomplete >= 1) return 'Medium';
     // closing within 14 days with any open milestone = Medium
     return 'Low';
-}
-
-
-// Render transactions table (async)
-
-async function renderTransactions(filter = '') {
-    // filter defaults to empty string so the function works with or without a search term
-    const tbody = document.getElementById('transactionTableBody');
-    if (!tbody) return; // exits early if the table doesn't exist on this page
-
-    let transactions = await getTransactions();
-    // await here waits for the API response before trying to display anything
-
-    // apply search filter
-    if (filter) {
-        filter = filter.toLowerCase();
-        transactions = transactions.filter(t =>
-            t.fileID.toLowerCase().includes(filter) ||
-            t.propertyAddress.toLowerCase().includes(filter)
-        );
-        // .filter() returns a new array with only the matching deals
-    }
-
-    // apply stage filter
-    const stageFilter = document.getElementById('stageFilter');
-    if (stageFilter && stageFilter.value) {
-        transactions = transactions.filter(t => t.stage === stageFilter.value);
-    }
-
-    // apply risk filter
-    const riskFilter = document.getElementById('riskFilter');
-    if (riskFilter && riskFilter.value) {
-        transactions = transactions.filter(t =>
-            (t.riskLevel || autoRisk(t)).toLowerCase() === riskFilter.value
-        );
-    }
-
-    if (transactions.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7">No transactions found.</td></tr>';
-        return;
-    }
-
-    tbody.innerHTML = transactions.map(t => {
-        const days = daysToClose(t.closingDate);
-        const risk = t.riskLevel || autoRisk(t); // uses manual risk if set, otherwise auto-calculates
-        const riskClass = risk === 'High' ? 'risk-high' : risk === 'Medium' ? 'risk-medium' : 'risk-low';
-        return `
-            <tr>
-                <td>${t.fileID}</td>
-                <td>${t.propertyAddress || '—'}</td>
-                <td>${t.stage || '—'}</td>
-                <td>${t.closingDate || '—'}</td>
-                <td>${days}</td>
-                <td class="${riskClass}">${risk}</td>
-                <td>
-                    <a href="#">View</a> |
-                    <a href="add.html?fileID=${t.fileID}">Edit</a> |
-                    <a href="#" onclick="deleteTransaction('${t.fileID}'); return false;">Delete</a> |
-                    <a href="#" onclick="openComposer('${t.fileID}'); return false;">Email</a>
-                </td>
-            </tr>
-        `;
-    }).join('');
-    // .map() builds one <tr> string per transaction, .join('') merges them into one big HTML string
 }
 
 
@@ -555,29 +620,4 @@ ${sig}`
         document.getElementById('subjectLine').value = templates[template].subject;
         document.getElementById('emailBody').value = templates[template].body;
     }
-}
-
-function copyEmail() {
-    const subject = document.getElementById('subjectLine').value;
-    const body = document.getElementById('emailBody').value;
-    const full = 'Subject: ' + subject + '\n\n' + body;
-    navigator.clipboard.writeText(full).then(() => {
-        // navigator.clipboard is the browser's built-in clipboard API
-        // .then() runs after the copy succeeds since it's async
-        alert('Email copied to clipboard!');
-    });
-}
-
-function openInGmail() {
-    const subject = encodeURIComponent(document.getElementById('subjectLine').value);
-    const body = encodeURIComponent(document.getElementById('emailBody').value);
-    // encodeURIComponent converts spaces and special characters into URL-safe format
-    window.open('https://mail.google.com/mail/?view=cm&su=' + subject + '&body=' + body);
-    // window.open opens a new tab instead of navigating away from the page
-}
-
-function openInOutlook() {
-    const subject = encodeURIComponent(document.getElementById('subjectLine').value);
-    const body = encodeURIComponent(document.getElementById('emailBody').value);
-    window.open('https://outlook.live.com/mail/0/deeplink/compose?subject=' + subject + '&body=' + body);
 }
