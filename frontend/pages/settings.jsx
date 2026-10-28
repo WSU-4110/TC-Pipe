@@ -4,6 +4,8 @@ import "./app.js";
 
 function settings() {
 
+    // fetch current user information
+
     /* wire the form's submit event to saveSettings() in app.js
        e.preventDefault() inside saveSettings stops the page from reloading on submit */
     document.getElementById('settingsForm').addEventListener('submit', saveSettings);
