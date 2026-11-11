@@ -1,5 +1,3 @@
-
-
 const path = require('path');
 const express = require('express');
 const cors = require('cors');
@@ -67,16 +65,10 @@ function createTableSql() {
 
 // ---------- database ----------
 
-let pool; // created in start() once the database exists
-
-// mysql's query() uses callbacks; this wraps it so we can use async/await.
-function query(sql, params) {
-    return new Promise((resolve, reject) => {
-        pool.query(sql, params || [], (err, result) => (err ? reject(err) : resolve(result)));
-    });
-}
-
 // DESIGN PATTERN: Singleton — ensures only one database connection pool exists
+// across the entire application lifetime. The private constructor and static
+// getInstance() method guarantee that mysql2.createPool() is called exactly once,
+// preventing redundant connections and sharing one pool across all routes.
 class DatabasePool {
     static #instance = null;
 
@@ -104,6 +96,11 @@ class DatabasePool {
     }
 }
 
+// Convenience wrapper — routes call query() directly; it delegates to the singleton.
+function query(sql, params) {
+    return DatabasePool.getInstance().query(sql, params);
+}
+
 async function initDatabase() {
     // 1) make sure the database exists (needs permission to CREATE DATABASE; skipped if it already exists)
     const admin = mysql.createConnection({ host: DB.host, port: DB.port, user: DB.user, password: DB.password });
@@ -117,17 +114,16 @@ async function initDatabase() {
     }
     admin.end();
 
-    // 2) connect to it. dateStrings:true makes DATE columns come back as "2026-08-04" text,
+    // 2) initialize the singleton pool — connects to the database.
+    //    dateStrings:true makes DATE columns come back as "2026-08-04" text,
     //    which is what the frontend and the <input type="date"> boxes expect.
     DatabasePool.getInstance().initialize({
-    host: DB.host, port: DB.port, user: DB.user, password: DB.password, database: DB.database,
-    connectionLimit: 10, dateStrings: true, charset: 'UTF8MB4_GENERAL_CI'
-});
+        host: DB.host, port: DB.port, user: DB.user, password: DB.password, database: DB.database,
+        connectionLimit: 10, dateStrings: true, charset: 'UTF8MB4_GENERAL_CI'
+    });
 
     // 3) make sure the table exists
-    function query(sql, params) {
-    return DatabasePool.getInstance().query(sql, params);
-}
+    await query(createTableSql());
 }
 
 // ---------- cleaning data on the way in ----------
@@ -303,11 +299,11 @@ app.use((err, req, res, next) => {
 function explainStartupError(err) {
     switch (err.code) {
         case 'ECONNREFUSED':
-            return 'MySQL isn\u2019t reachable at ' + DB.host + ':' + DB.port + '. Is the MySQL server running?';
+            return 'MySQL isn’t reachable at ' + DB.host + ':' + DB.port + '. Is the MySQL server running?';
         case 'ER_ACCESS_DENIED_ERROR':
             return 'MySQL rejected the login. Check DB_USER and DB_PASSWORD (currently user "' + DB.user + '").';
         case 'ER_NOT_SUPPORTED_AUTH_MODE':
-            return 'The "mysql" package can\u2019t use MySQL 8\u2019s default login method. Either run\n' +
+            return 'The "mysql" package can’t use MySQL 8’s default login method. Either run\n' +
                    '  ALTER USER \'' + DB.user + '\'@\'localhost\' IDENTIFIED WITH mysql_native_password BY \'your_password\';\n' +
                    'in MySQL, or switch the backend to the "mysql2" package.';
         default:
