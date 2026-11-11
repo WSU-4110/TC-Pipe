@@ -14,6 +14,19 @@ function loadSettings() {
     }
 }
 
+function saveSettings(e) {
+    e.preventDefault(); // stops the form from reloading the page on submit
+    const settings = {
+        fullName: document.getElementById('fullName').value,
+        email: document.getElementById('email').value,
+        phoneNumber: document.getElementById('phoneNumber').value,
+        companyOrBrokerage: document.getElementById('companyOrBrokerage').value,
+        titleOrRole: document.getElementById('titleOrRole').value,
+        linkedInUrl: document.getElementById('linkedInUrl').value
+    };
+    saveData('tcSettings', settings); // saves the whole object to localStorage under the key 'tcSettings'
+    alert('Settings saved!');
+}
 
 // ==================== TRANSACTION FUNCTIONS ==================== //
 /*
@@ -144,33 +157,6 @@ function loadData(key) {
 
 
 // Settings (still uses localStorage since its simple and fast)
-
-function loadSettings() {
-    const settings = loadData('tcSettings');
-    if (settings) {
-        document.getElementById('fullName').value = settings.fullName || '';
-        // || '' means "use the saved value, or fall back to empty string if it doesn't exist"
-        document.getElementById('email').value = settings.email || '';
-        document.getElementById('phoneNumber').value = settings.phoneNumber || '';
-        document.getElementById('companyOrBrokerage').value = settings.companyOrBrokerage || '';
-        document.getElementById('titleOrRole').value = settings.titleOrRole || '';
-        document.getElementById('linkedInUrl').value = settings.linkedInUrl || '';
-    }
-}
-
-function saveSettings(e) {
-    e.preventDefault(); // stops the form from reloading the page on submit
-    const settings = {
-        fullName: document.getElementById('fullName').value,
-        email: document.getElementById('email').value,
-        phoneNumber: document.getElementById('phoneNumber').value,
-        companyOrBrokerage: document.getElementById('companyOrBrokerage').value,
-        titleOrRole: document.getElementById('titleOrRole').value,
-        linkedInUrl: document.getElementById('linkedInUrl').value
-    };
-    saveData('tcSettings', settings); // saves the whole object to localStorage under the key 'tcSettings'
-    alert('Settings saved!');
-}
 
 
 // Transaction API (async talks to PHP backend now)

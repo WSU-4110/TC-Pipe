@@ -2,7 +2,7 @@ import {useState, useEffect} from 'react';
 import "./style.css";
 import "./app.js";
 
-function settings() {
+function Settings() {
 
     // fetch current user information
 
@@ -67,4 +67,4 @@ function settings() {
     )
 }
 
-export default settings;
+export default Settings;

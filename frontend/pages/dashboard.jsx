@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import "./style.css";
 import "./app.js";
 
 function Dashboard() {
+    // navigation hook
+    const navigate = useNavigate();
 
     // useStates
     const [greeting, setGreeting] = useState('');
@@ -18,11 +21,11 @@ function Dashboard() {
             const settings = typeof loadData === 'function' ? loadData('tcSettings') : null;
             const name = settings ? settings.fullName.split(' ')[0] : 'there';
             const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-            const day = days[Date().getDay()];
-
+            const day = days[Date().getDay];
+            
             let timeOfDay = 'Good morning';
-            if (Date().getHours() >= 12 && Date().getHours() < 17) timeOfDay = 'Good afternoon';
-            else if (Date().getHours() >= 17) timeOfDay = 'Good evening';
+            if (Date().getHours >= 12 && Date().getHours < 17) timeOfDay = 'Good afternoon';
+            else if (Date().getHours >= 17) timeOfDay = 'Good evening';
             
            return `${timeOfDay}, ${name} — here's your pipeline for ${day}.`;
 
@@ -36,12 +39,11 @@ function Dashboard() {
         <>
             <div id="app">
                 <div id="sidebar">
-                    <a href="/" id="brand">TC Pipeline</a>
-                    <a href="/dashboard">Dashboard</a>
-                    <a href="/newDeal">New Deal</a>
-                    <a href="/transactions">Transactions</a>
-                    <a href="/analyzer">Analyzer</a>
-                    <a href="/settings">Settings</a>
+                    <a onClick={() => navigate('/dashboard')} id="brand">TC Pipeline</a>
+                    <a href="/dashboard" onClick={() => navigate('/dashboard')}>Dashboard</a>
+                    <a href="/newDeal" onClick={() => navigate('/newDeal')}>New Deal</a>
+                    <a href="/transactions" onClick={() => navigate('/transactions')}>Transactions</a>
+                    <a href="/settings" onClick={() => navigate('/settings')}>Settings</a>
                 </div>
 
                 <div id="main">
@@ -71,6 +73,7 @@ function Dashboard() {
                         
                         {/* Active Deals table */}
                         <table>
+                            <tbody>
                             <tr>
                                 <th>File ID</th>
                                 <th>Address</th>
@@ -80,6 +83,7 @@ function Dashboard() {
                                 <th>Risk</th>
                                 <th>Actions</th>
                             </tr>
+                            </tbody>
                             <tbody id="dashboardTableBody">
                                 <tr>
                                     <td colSpan="7" style={{ textAlign: 'center' }}>Loading deals...</td>
@@ -91,12 +95,14 @@ function Dashboard() {
                         {/* Upcoming Deadlines table */}
                         <h2>Upcoming Deadlines</h2>
                         <table>
+                            <tbody>
                             <tr>
                                 <th>File ID</th>
                                 <th>Deadline Type</th>
                                 <th>Due Date</th>
                                 <th>Days Remaining</th>
                             </tr>
+                            </tbody>
                             <tbody id="deadlinesTableBody">
                                 <tr>
                                     <td colSpan="4" style={{ textAlign: 'center' }}>Loading deadlines...</td>

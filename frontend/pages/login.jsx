@@ -1,7 +1,9 @@
 import { useState } from 'react'   
+import { useNavigate } from 'react-router-dom'
 import "./styleSheets/loginStyle.css"
 
-function login(event){
+function Login(event){
+    const navigate = useNavigate();
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [message, setMessage] = useState('');
@@ -18,7 +20,7 @@ function login(event){
             setMessage("Login successful! Welcome back.");
             setMessageClass("success");
             setTimeout(() => {
-                window.location.href = '/pages/index.html';
+                navigate('/dashboard'); // Redirect to the dashboard page
             }, 1000); // Redirect after 1 second
         } else {
             setMessage("Invalid username or password.");
@@ -61,4 +63,4 @@ function login(event){
     );
 }
 
-export default login
+export default Login
