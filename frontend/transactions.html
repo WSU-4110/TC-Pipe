@@ -90,6 +90,7 @@
 </div>
 
 <!-- REPLACE ONLY THE VERY BOTTOM SCRIPT BLOCK IN transactions.html WITH THIS -->
+<script src="./src/assets/transactionFilters.js"></script>
 <script src="./src/assets/app.js"></script>
 <script>
 // This checks if your old app.js is present. 
@@ -115,24 +116,17 @@ function runLocalFallback(filter = '') {
     const stageFilter = document.getElementById('stageFilter') ? document.getElementById('stageFilter').value.toLowerCase().trim() : "";
     const riskFilter = document.getElementById('riskFilter') ? document.getElementById('riskFilter').value.toLowerCase().trim() : "";
 
-    let filteredDeals = deals.filter(deal => {
-        const matchesSearch = !searchQuery || 
-            (deal.fileID && deal.fileID.toLowerCase().includes(searchQuery)) || 
-            (deal.propertyAddress && deal.propertyAddress.toLowerCase().includes(searchQuery));
-            
-        let dealStage = deal.stage || 'active';
-        const matchesStage = !stageFilter || dealStage.toLowerCase().replace(/[\s_]+/g, '-') === stageFilter;
-        
-        let dealRisk = deal.riskLevel || deal.risk || 'low';
-        const matchesRisk = !riskFilter || dealRisk.toLowerCase() === riskFilter;
+   const transactionFilter = new TransactionFilter([
+    new SearchFilterStrategy(),
+    new StageFilterStrategy(),
+    new RiskFilterStrategy()
+]);
 
-        return matchesSearch && matchesStage && matchesRisk;
-    });
-
-    if (filteredDeals.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:#777;">No transactions found matching filters.</td></tr>';
-        return;
-    }
+let filteredDeals = transactionFilter.applyFilters(deals, {
+    searchQuery,
+    stageFilter,
+    riskFilter
+});
 
     filteredDeals.forEach(deal => {
         const row = document.createElement('tr');
