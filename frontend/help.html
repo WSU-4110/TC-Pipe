@@ -452,39 +452,64 @@
         $(id).addEventListener('change', () => setInvalid($(id), false));
     });
 
-    // ---------- talking to the server (the ONLY place that does) ----------
-    // Returns { ok, data }, where data is the JSON the backend sends back:
+        // ---------- sending the report: STRATEGY pattern ----------
+    // ReportSender is the Strategy interface. Each subclass is one way of sending a report and
+    // returns { ok, data }, where data is the JSON the backend sends back:
     //   success: { success: true, reportID: "BR-...", emailRequested: true/false }
     //   failure: { success: false, code: "...", error: "message" }
-    async function sendReport(report, signal) {
-        if (USE_MOCK) return mockSend(report);
-        const res = await fetch('api/bug-reports', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(report),
-            signal: signal
-        });
-        let data = null;
-        try { data = await res.json(); } catch (err) { /* not JSON */ }
-        return { ok: res.ok, data: data };
+    class ReportSender {
+        send(report, signal) { throw new Error('ReportSender.send() must be implemented'); }
     }
 
-    // Demo mode only: a fake server reply after a short pause. Saves nothing, sends nothing.
-    function mockSend(report) {
-        return new Promise(function (resolve) {
-            setTimeout(function () {
-                if (new URLSearchParams(location.search).get('mock') === 'fail') {
-                    resolve({ ok: false, data: { success: false, code: 'STORE_FAILED', error: MSG_FAILED } });
-                    return;
-                }
-                const d = new Date();
-                const p = function (n) { return String(n).padStart(2, '0'); };
-                const id = 'BR-' + d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '-' +
-                    (Math.random().toString(16) + '00000000').slice(2, 10).toUpperCase();
-                resolve({ ok: true, data: { success: true, reportID: id, emailRequested: !!report.email } });
-            }, 400);
-        });
+    // ConcreteStrategy 1: the real server.
+    class HttpReportSender extends ReportSender {
+        constructor(url) { super(); this.url = url; }
+
+        async send(report, signal) {
+            const res = await fetch(this.url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(report),
+                signal: signal
+            });
+            let data = null;
+            try { data = await res.json(); } catch (err) { /* not JSON */ }
+            return { ok: res.ok, data: data };
+        }
     }
+
+    // ConcreteStrategy 2: demo mode. A fake server reply after a short pause. Saves and sends nothing.
+    class MockReportSender extends ReportSender {
+        constructor(delayMs) { super(); this.delayMs = delayMs; }
+
+        send(report, signal) {
+            return new Promise(function (resolve) {
+                setTimeout(function () {
+                    if (new URLSearchParams(location.search).get('mock') === 'fail') {
+                        resolve({ ok: false, data: { success: false, code: 'STORE_FAILED', error: MSG_FAILED } });
+                        return;
+                    }
+                    const d = new Date();
+                    const p = function (n) { return String(n).padStart(2, '0'); };
+                    const id = 'BR-' + d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '-' +
+                        (Math.random().toString(16) + '00000000').slice(2, 10).toUpperCase();
+                    resolve({ ok: true, data: { success: true, reportID: id, emailRequested: !!report.email } });
+                }, this.delayMs);
+            }.bind(this));
+        }
+    }
+
+    // Context: the form only talks to this class. It never knows which sender is behind it.
+    class ReportSubmitter {
+        constructor(sender) { this.sender = sender; }
+        setSender(sender) { this.sender = sender; }
+        submit(report, signal) { return this.sender.send(report, signal); }
+    }
+
+    // The one place that chooses a strategy.
+    const submitter = new ReportSubmitter(
+        USE_MOCK ? new MockReportSender(400) : new HttpReportSender('api/bug-reports')
+    );
 
     // ---------- submit (steps 6-12) ----------
     let sending = false;
@@ -515,7 +540,7 @@
         const timer = setTimeout(() => controller.abort(), SEND_TIMEOUT_MS);
 
         try {
-            const result = await sendReport(report, controller.signal);
+            const result = await submitter.submit(report, controller.signal);
             const data = result.data;
 
             if (result.ok && data && data.success) {
