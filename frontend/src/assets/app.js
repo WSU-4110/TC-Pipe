@@ -133,29 +133,24 @@ async function renderTransactions(filter = '') {
     let transactions = await getTransactions();
     // await here waits for the API response before trying to display anything
 
-    // apply search filter
-    if (filter) {
-        filter = filter.toLowerCase();
-        transactions = transactions.filter(t =>
-            t.fileID.toLowerCase().includes(filter) ||
-            t.propertyAddress.toLowerCase().includes(filter)
-        );
-        // .filter() returns a new array with only the matching deals
-    }
+  
+// Apply Strategy Design Pattern
 
-    // apply stage filter
-    const stageFilter = document.getElementById('stageFilter');
-    if (stageFilter && stageFilter.value) {
-        transactions = transactions.filter(t => t.stage === stageFilter.value);
-    }
+const stageFilter = document.getElementById('stageFilter');
+const riskFilter = document.getElementById('riskFilter');
 
-    // apply risk filter
-    const riskFilter = document.getElementById('riskFilter');
-    if (riskFilter && riskFilter.value) {
-        transactions = transactions.filter(t =>
-            (t.riskLevel || autoRisk(t)).toLowerCase() === riskFilter.value
-        );
-    }
+const transactionFilter = new TransactionFilter([
+    new SearchFilterStrategy(),
+    new StageFilterStrategy(),
+    new RiskFilterStrategy()
+]);
+
+transactions = transactionFilter.applyFilters(transactions, {
+    searchQuery: filter,
+    stageFilter: stageFilter ? stageFilter.value : '',
+    riskFilter: riskFilter ? riskFilter.value : ''
+});
+
 
     if (transactions.length === 0) {
         tbody.innerHTML = '<tr><td colspan="7">No transactions found.</td></tr>';

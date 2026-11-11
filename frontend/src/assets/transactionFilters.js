@@ -41,6 +41,7 @@ class StageFilterStrategy {
 
 
 // Strategy 3: Filter by Risk Level
+
 class RiskFilterStrategy {
 
     filter(deals, riskFilter) {
@@ -49,8 +50,9 @@ class RiskFilterStrategy {
 
         return deals.filter(deal => {
 
-            const risk = (deal.riskLevel || deal.risk || "low")
-                .toLowerCase();
+            const risk = (
+                deal.riskLevel || autoRisk(deal)
+            ).toLowerCase();
 
             return risk === riskFilter;
         });
