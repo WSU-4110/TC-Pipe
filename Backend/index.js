@@ -76,6 +76,34 @@ function query(sql, params) {
     });
 }
 
+// DESIGN PATTERN: Singleton — ensures only one database connection pool exists
+class DatabasePool {
+    static #instance = null;
+
+    constructor() {
+        this.pool = null;
+    }
+
+    static getInstance() {
+        if (!DatabasePool.#instance) {
+            DatabasePool.#instance = new DatabasePool();
+        }
+        return DatabasePool.#instance;
+    }
+
+    initialize(config) {
+        this.pool = mysql.createPool(config);
+    }
+
+    query(sql, params = []) {
+        return new Promise((resolve, reject) => {
+            this.pool.query(sql, params, (err, result) =>
+                err ? reject(err) : resolve(result)
+            );
+        });
+    }
+}
+
 async function initDatabase() {
     // 1) make sure the database exists (needs permission to CREATE DATABASE; skipped if it already exists)
     const admin = mysql.createConnection({ host: DB.host, port: DB.port, user: DB.user, password: DB.password });
@@ -91,13 +119,15 @@ async function initDatabase() {
 
     // 2) connect to it. dateStrings:true makes DATE columns come back as "2026-08-04" text,
     //    which is what the frontend and the <input type="date"> boxes expect.
-    pool = mysql.createPool({
-        host: DB.host, port: DB.port, user: DB.user, password: DB.password, database: DB.database,
-        connectionLimit: 10, dateStrings: true, charset: 'UTF8MB4_GENERAL_CI'
-    });
+    DatabasePool.getInstance().initialize({
+    host: DB.host, port: DB.port, user: DB.user, password: DB.password, database: DB.database,
+    connectionLimit: 10, dateStrings: true, charset: 'UTF8MB4_GENERAL_CI'
+});
 
     // 3) make sure the table exists
-    await query(createTableSql());
+    function query(sql, params) {
+    return DatabasePool.getInstance().query(sql, params);
+}
 }
 
 // ---------- cleaning data on the way in ----------
