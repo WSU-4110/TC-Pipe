@@ -1,6 +1,5 @@
-// const path = require('path');
-import { nanoid, customAplhabet } from 'nanoid';
 
+const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const mysql = require('mysql2');
@@ -562,17 +561,16 @@ app.post('./settings', authenticateToken, (req, res) => {
 //     }
 // }
 
-// initDatabase()
-//     .then(() => {
-//         app.listen(PORT, () => {
-//             console.log('TC Pipeline API running at http://localhost:' + PORT + '/api/transactions.php');
-//             console.log('Database: ' + DB.database + ' on ' + DB.host + ':' + DB.port);
-//             if (FRONTEND_DIR) console.log('Frontend: http://localhost:' + PORT + '/index.html  (serving ' + FRONTEND_DIR + ')');
-//             else console.log('Frontend not served. Set FRONTEND_DIR to the folder with index.html to serve it from here.');
-//         });
-//     })
-//     .catch(err => {
-//         console.error('Could not start: ' + explainStartupError(err));
-//         process.exit(1);
-//     });
-
+initDatabase()
+    .then(() => {
+        app.listen(PORT, () => {
+            console.log('TC Pipeline API running at http://localhost:' + PORT + '/api/transactions.php');
+            console.log('Database: ' + DB.database + ' on ' + DB.host + ':' + DB.port);
+            if (FRONTEND_DIR) console.log('Frontend: http://localhost:' + PORT + '/index.html  (serving ' + FRONTEND_DIR + ')');
+            else console.log('Frontend not served. Set FRONTEND_DIR to the folder with index.html to serve it from here.');
+        });
+    })
+    .catch(err => {
+        console.error('Could not start: ' + explainStartupError(err));
+        process.exit(1);
+    });
