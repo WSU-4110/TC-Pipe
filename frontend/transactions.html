@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Pipeline Tracker | Transactions</title>
+    <link rel="stylesheet" href="./src/assets/style.css">
+</head>
+<body>
+<div id="app">
+    <div id="sidebar">
+        <a href="index.html" id="brand">TC Pipeline</a>
+        <a href="index.html">Dashboard</a>
+        <a href="add.html">New Deal</a>
+        <a href="transactions.html">Transactions</a>
+    </div>
+
+    <div id="main">
+        <h1>Transactions</h1>
+        <div id="filters">
+            
+            <select id="stageFilter">
+                <option value="" selected>All Stages</option>
+                <option value="pre-contract">Pre-Contract</option>
+                <option value="active">Active</option>
+                <option value="inspection">Inspection</option>
+                <option value="appraisal">Appraisal</option>
+                <option value="underwriting">Underwriting</option>
+                <option value="clear-to-close">Clear to Close</option>
+                <option value="closed">Closed</option>
+                <option value="terminated">Terminated</option>
+            </select>
+
+            <select id="riskFilter">
+                <option value="" selected>All Risk</option>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+            </select>
+        </div>
+
+        <div id="table">
+            <h2>All Transactions</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>File ID</th>
+                        <th>Address</th>
+                        <th>Stage</th>
+                        <th>Closing Date</th>
+                        <th>Days to Close</th>
+                        <th>Risk</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="transactionTableBody">
+                    <!-- Data will inject here seamlessly -->
+                </tbody>
+            </table>
+        </div>
+
+        <div id="emailComposer" style="display:none; margin-top: 40px; padding: 20px; border: 1px solid #ccc; background-color: #fafafa;">
+            <h2>Email Composer</h2>
+            <div class="field">
+                <label for="templateSelect">Select Template</label>
+                <select id="templateSelect" onchange="loadTemplate()">
+                    <option value="">Select a Template</option>
+                    <option value="welcome">Welcome & Next Steps</option>
+                    <option value="emd">EMD Received</option>
+                    <option value="inspection">Inspection Complete</option>
+                    <option value="appraisal">Appraisal Received</option>
+                    <option value="ctc">Clear to Close</option>
+                    <option value="weekly">Weekly Status Update</option>
+                    <option value="postclose">Post-Close Thank You</option>
+                </select>
+            </div>
+            <div class="field">
+                <label for="subjectLine">Subject Line</label>
+                <input type="text" id="subjectLine" readonly>
+            </div>
+            <div class="field">
+                <label for="emailBody">Email Body</label>
+                <textarea id="emailBody" style="min-height: 300px;"></textarea>
+            </div>
+            <button onclick="copyEmail()">Copy to Clipboard</button>
+            <button onclick="openInGmail()">Open in Gmail</button>
+            <button onclick="openInOutlook()">Open in Outlook</button>
+            <button onclick="closeComposer()">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- REPLACE ONLY THE VERY BOTTOM SCRIPT BLOCK IN transactions.html WITH THIS -->
+<script src="./src/assets/app.js"></script>
+<script>
+// This checks if your old app.js is present. 
+// If it finds your old server engine, it uses it. Otherwise, it uses local memory!
+function executeRender(filterValue = '') {
+    if (typeof getTransactions === 'function') {
+        // App.js is loaded! Let your original file engine handle the rendering
+        renderTransactions(filterValue);
+    } else {
+        // Fallback to local memory if app.js isn't found
+        runLocalFallback(filterValue);
+    }
+}
+
+function runLocalFallback(filter = '') {
+    const tbody = document.getElementById('transactionTableBody');
+    if (!tbody) return;
+
+    const deals = JSON.parse(localStorage.getItem('tc_pipeline_deals')) || [];
+    tbody.innerHTML = '';
+
+    const searchQuery = document.getElementById('search') ? document.getElementById('search').value.toLowerCase().trim() : "";
+    const stageFilter = document.getElementById('stageFilter') ? document.getElementById('stageFilter').value.toLowerCase().trim() : "";
+    const riskFilter = document.getElementById('riskFilter') ? document.getElementById('riskFilter').value.toLowerCase().trim() : "";
+
+    let filteredDeals = deals.filter(deal => {
+        const matchesSearch = !searchQuery || 
+            (deal.fileID && deal.fileID.toLowerCase().includes(searchQuery)) || 
+            (deal.propertyAddress && deal.propertyAddress.toLowerCase().includes(searchQuery));
+            
+        let dealStage = deal.stage || 'active';
+        const matchesStage = !stageFilter || dealStage.toLowerCase().replace(/[\s_]+/g, '-') === stageFilter;
+        
+        let dealRisk = deal.riskLevel || deal.risk || 'low';
+        const matchesRisk = !riskFilter || dealRisk.toLowerCase() === riskFilter;
+
+        return matchesSearch && matchesStage && matchesRisk;
+    });
+
+    if (filteredDeals.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:#777;">No transactions found matching filters.</td></tr>';
+        return;
+    }
+
+    filteredDeals.forEach(deal => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${deal.fileID || '—'}</td>
+            <td>${deal.propertyAddress || '—'}</td>
+            <td><span class="badge ${(deal.stage || 'active').toLowerCase()}">${(deal.stage || 'ACTIVE').toUpperCase()}</span></td>
+            <td>${deal.closingDate || '—'}</td>
+            <td>—</td>
+            <td><strong style="color: green;">LOW</strong></td>
+            <td><a href="#" onclick="openComposer('${deal.fileID}'); return false;">Email</a></td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+// Connect the event listeners cleanly to our smart router function
+if (document.getElementById('search')) {
+    document.getElementById('search').addEventListener('input', function() {
+        executeRender(this.value);
+    });
+}
+if (document.getElementById('stageFilter')) {
+    document.getElementById('stageFilter').addEventListener('change', function() {
+        executeRender(document.getElementById('search').value);
+    });
+}
+if (document.getElementById('riskFilter')) {
+    document.getElementById('riskFilter').addEventListener('change', function() {
+        executeRender(document.getElementById('search').value);
+    });
+}
+
+// Initial Boot up sequence
+window.addEventListener('DOMContentLoaded', () => {
+    executeRender();
+});
+</script>
+</body>
+</html>
