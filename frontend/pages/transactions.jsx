@@ -1,7 +1,7 @@
 import {useState, useEffect} from 'react';
 import { useNavigate } from 'react-router-dom';
-import "./style.css";
-import * as appScript from "./app.js";
+import "./styleSheets/style.css";
+import * as appScript from "./scripts/app.js";
 
 function transactions() {
     // navigation hook

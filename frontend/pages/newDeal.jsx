@@ -1,13 +1,13 @@
 import {useState} from 'react';
-import "./style.css";
-import "./app.js";
+import "./styleSheets/style.css";
+import "./scripts/app.js";
 
 
 function NewDeal() {
 
     const [formData, setFormData] = useState({
         fileID: '',
-        addrerss: '',
+        address: '',
         clientName: '',
         stage: 'Lead',
         closingDate: '',
@@ -30,77 +30,6 @@ function NewDeal() {
 
         // enter the fetch and post request to the backend here to send the formData to the SQL database
     }
-
-
-    // function newDealHandler() {
-    //     const params = new URLSearchParams(window.location.search);
-    //     const editFileID = params.get('fileID');
-
-    //     if (editFileID) {
-    //         document.querySelector('h1').innerHTML = 'Edit Transaction';
-    //         document.querySelector('button[type="submit"]').innerHTML = 'Update Deal';
-    //         loadTransactionForEdit(editFileID);
-    //     }
-
-    //     document.getElementById('dealForm').addEventListener('submit', async function(e) {
-    //         e.preventDefault();
-
-    //         const transaction = {
-    //             fileID: document.getElementById('fileID').value.trim(),
-    //             side: document.getElementById('side').value,
-    //             propertyType: document.getElementById('propertyType').value,
-    //             transactionType: document.getElementById('transactionType').value,
-    //             stage: document.getElementById('stage').value,
-    //             mlsNumber: document.getElementById('mlsNumber').value.trim(),
-    //             buyerName: document.getElementById('buyerName').value.trim(),
-    //             sellerName: document.getElementById('sellerName').value.trim(),
-    //             listingAgent: document.getElementById('listingAgent').value.trim(),
-    //             assignedTo: document.getElementById('assignee').value.trim(),
-    //             propertyAddress: document.getElementById('propertyAddress').value.trim(),
-    //             closingLocation: document.getElementById('closingLocation').value.trim(),
-    //             contractDate: document.getElementById('contractDate').value,
-    //             closingDate: document.getElementById('closingDate').value,
-    //             closingTime: document.getElementById('closingTime').value,
-    //             emdDueDate: document.getElementById('emdDueDate').value,
-    //             inspectionDeadline: document.getElementById('inspectionDeadline').value,
-    //             appraisalDeadline: document.getElementById('appraisalDeadline').value,
-    //             financingContingencyDeadline: document.getElementById('financingContingencyDeadline').value,
-    //             purchasePrice: document.getElementById('purchasePrice').value,
-    //             listingPrice: document.getElementById('listingPrice').value,
-    //             emdAmount: document.getElementById('emdAmount').value,
-    //             titleCompanyName: document.getElementById('titleCompanyName').value.trim(),
-    //             titleCompanyContact: document.getElementById('titleCompanyContact').value.trim(),
-    //             lenderName: document.getElementById('lenderName').value.trim(),
-    //             lenderContact: document.getElementById('lenderContact').value.trim(),
-    //             riskLevel: document.getElementById('riskLevel').value,
-    //             nextAction: document.getElementById('nextAction').value.trim(),
-    //             nextActionDue: document.getElementById('nextActionDue').value,
-    //             blocker: document.getElementById('blocker').value.trim(),
-    //             notes: document.getElementById('notes').value.trim(),
-    //             earnestMoneyReceived: document.getElementById('earnestMoneyReceived').checked,
-    //             inspectionComplete: document.getElementById('inspectionComplete').checked,
-    //             appraisalReceived: document.getElementById('appraisalReceived').checked,
-    //             titleClear: document.getElementById('titleClear').checked,
-    //             insuranceConfirmed: document.getElementById('insuranceConfirmed').checked,
-    //             clearToCloseConfirmed: document.getElementById('clearToCloseConfirmed').checked,
-    //         };
-
-    //         if (!transaction.fileID) {
-    //             alert('File ID is required.');
-    //             return;
-    //         }
-
-    //         if (editFileID) {
-    //             await apiPut(transaction);
-    //             alert('Deal updated successfully!');
-    //         } else {
-    //             await apiPost(transaction);
-    //             alert('Deal saved successfully!');
-    //         }
-
-    //         window.location.href = '/transactions';
-    //     });
-    // }
 
     return (
         <>

@@ -1,6 +1,6 @@
 import {useState} from 'react';
 import "./style.css";
-import "./app.js";
+import "./scripts/app.js";
 
 
 function analyzer() {

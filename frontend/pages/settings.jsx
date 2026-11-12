@@ -1,6 +1,6 @@
 import {useState, useEffect} from 'react';
-import "./style.css";
-import "./app.js";
+import "./styleSheets/style.css";
+import "./scripts/app.js";
 
 function Settings() {
 
@@ -18,7 +18,6 @@ function Settings() {
                 <a href='/dashboard' onClick={() => navigate('/dashboard')}>Dashboard</a>
                 <a href='/newDeal' onClick={() => navigate('/newDeal')}>New Deal</a>
                 <a href='/transactions' onClick={() => navigate('/transactions')}>Transactions</a>
-                {/* <a href='/analyzer' onClick={() => navigate('/analyzer')}>Analyzer</a> */}
                 <a href='/settings' onClick={() => navigate('/settings')}>Settings</a>
             </div>
             <div id="main">

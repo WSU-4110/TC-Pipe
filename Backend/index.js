@@ -38,6 +38,8 @@ const createDatabaseIfNotExists = () => {
         email VARCHAR(255) NOT NULL UNIQUE,
         username VARCHAR(255) NOT NULL UNIQUE,
         password VARCHAR(255) NOT NULL,
+        firstname VARCHAR(255) NOT NULL,
+        lastname VARCHAR(255) NOT NULL,
         linkedIN VARCHAR(255) UNIQUE default '',
         phoneNumber VARCHAR(255) UNIQUE default '',
         brokerageORcompany VARCHAR(255) default '',
@@ -106,9 +108,12 @@ createDatabaseIfNotExists();
 
 // ===== USER REGISTRATION / USER LOGIN ===== ///
 // registration
+// TODO: Validate user email NEED
+// TODO: Validate linkedIn URL NEED
+// TODO: Validate user phone number NEED
+// TODO: Validate user password strength WANT
 app.post('/register', (req, res) => {
-    const { username, password, email } = req.body;
-
+    const { username, password, email, firstname, lastname, phoneNumber, linkedIn, brokerageORcompany, titleORrole } = req.body;
 
     // Check if the username already exists
     db.query('SELECT * FROM users WHERE username = ?', [username], (err, results) => {
@@ -119,14 +124,51 @@ app.post('/register', (req, res) => {
         if (results.length > 0) {
             return res.status(400).json({ error: 'Username already exists' });
         }
-        // Insert the new user
-        db.query('INSERT INTO users (username, password, email) VALUES (?, ?, ?)', [username, password, email], (err, results) => {
-            if (err) {
-                console.error('Error creating user:', err);
-                return res.status(500).json({ error: 'Internal server error' });
-            }
-            res.status(201).json({ message: 'User created successfully' });
-        });
+    });
+        
+    // ----- validations ----- //
+    // -- email validation -- //
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        return res.status(400).json({ error: 'Invalid email format' });
+    }
+    // check if email is exists
+    db.query(`SELECT * FROM users WHERE email = ?`, [email], (err, results) => {
+        if (err) {
+            console.error('Error checking email:', err);
+            return res.status(500).json({ error: 'Internal server error' });
+        }
+        if (results.length > 0) {
+            return res.status(400).json({ error: 'Email already exists' });
+        }
+    });
+
+    // -- linkedIn validation -- //
+    const linkedInRegex = /^(https?:\/\/)?(www\.)?linkedin\.com\/.*$/;
+    if (linkedIn && !linkedInRegex.test(linkedIn)) {
+        return res.status(400).json({ error: 'Invalid LinkedIn URL' });
+    }
+
+    // -- phone number validation -- //
+    const phoneNumberRegex = /^\+?[1-9]\d{1,14}$/;
+    if (phoneNumber && !phoneNumberRegex.test(phoneNumber)) {
+        return res.status(400).json({ error: 'Invalid phone number format' });
+    }
+
+    // -- password strength validation -- //
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    if (!passwordRegex.test(password)) {
+        return res.status(400).json({ error: 'Password must be at least 8 characters long and include uppercase, lowercase, number, and special character' });
+    }
+
+    // If all validations pass, insert the new user into the database
+    // Insert the new user
+    db.query('INSERT INTO users (publicID, username, password, email, firstname, lastname, phoneNumber, linkedIn, brokerageORcompany, titleORrole) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [nanoid(), username, password, email, firstname, lastname, phoneNumber, linkedIn, brokerageORcompany, titleORrole], (err, results) => {
+        if (err) {
+            console.error('Error creating user:', err);
+            return res.status(500).json({ error: 'Internal server error' });
+        }
+        res.status(201).json({ message: 'User created successfully' });
     });
 });
 
@@ -214,9 +256,9 @@ app.post('/newDeal', authenticateToken, (req, res) => {
     }
     const newFileID = generateFileID();
     const { 
-        fileID, 
+        fileID = newFileID,
         // ===== Transaction info ===== ///
-        // Basic info
+        // Basic info   
         side, 
         propertyType, 
         transactionType, 

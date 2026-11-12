@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import "./style.css";
-import "./app.js";
+import "./styleSheets/style.css";
+import "./scripts/app.js";
 
 function Dashboard() {
     // navigation hook
