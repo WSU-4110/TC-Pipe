@@ -38,10 +38,10 @@ const createDatabaseIfNotExists = () => {
         email VARCHAR(255) NOT NULL UNIQUE,
         username VARCHAR(255) NOT NULL UNIQUE,
         password VARCHAR(255) NOT NULL,
-        linkedIN VARCHAR(255) UNIQUE,
-        phoneNumber VARCHAR(255) UNIQUE,
-        brokerageORcompany VARCHAR(255),
-        titleORrole VARCHAR(255)
+        linkedIN VARCHAR(255) UNIQUE default '',
+        phoneNumber VARCHAR(255) UNIQUE default '',
+        brokerageORcompany VARCHAR(255) default '',
+        titleORrole VARCHAR(255) default ''
         )`, (err) => {(err) ? console.error('Error creating users table:', err) : console.log('Users table created or already exists.')}
     );
 

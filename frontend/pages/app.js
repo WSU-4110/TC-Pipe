@@ -1,7 +1,7 @@
 // ==================== SETTINGS FUNCTIONS ==================== //
 // Settings (still uses localStorage since its simple and fast)
 
-function loadSettings() {
+export function loadSettings() {
     const settings = loadData('tcSettings');
     if (settings) {
         document.getElementById('fullName').value = settings.fullName || '';
@@ -14,7 +14,7 @@ function loadSettings() {
     }
 }
 
-function saveSettings(e) {
+export function saveSettings(e) {
     e.preventDefault(); // stops the form from reloading the page on submit
     const settings = {
         fullName: document.getElementById('fullName').value,
@@ -36,7 +36,7 @@ function saveSettings(e) {
 * @param {string} riskFilter - The risk level to filter transactions by.
 * @returns {void} - Asynchronously renders the transactions table.
 */
-async function renderTransactions(filter = '') {
+export async function renderTransactions(filter = '') {
     // filter defaults to empty string so the function works with or without a search term
     const tbody = document.getElementById('transactionTableBody');
     if (!tbody) return; // exits early if the table doesn't exist on this page
@@ -102,7 +102,7 @@ async function renderTransactions(filter = '') {
  * Copies the email content from the subject and body fields to the clipboard.
  * @returns {void} - Asynchronously copies the email to the clipboard.
 */
-function copyEmail() {
+export function copyEmail() {
     const subject = document.getElementById('subjectLine').value;
     const body = document.getElementById('emailBody').value;
     const full = 'Subject: ' + subject + '\n\n' + body;
@@ -118,7 +118,7 @@ function copyEmail() {
  * Opens the email content in Gmail.
  * @returns {void} - Opens a new tab with the email pre-filled in Gmail.
 */
-function openInGmail() {
+export function openInGmail() {
     const subject = encodeURIComponent(document.getElementById('subjectLine').value);
     const body = encodeURIComponent(document.getElementById('emailBody').value);
     // encodeURIComponent converts spaces and special characters into URL-safe format
@@ -131,7 +131,7 @@ function openInGmail() {
  * Opens the email content in Outlook.
  * @returns {void} - Opens a new tab with the email pre-filled in Outlook.
 */
-function openInOutlook() {
+export function openInOutlook() {
     const subject = encodeURIComponent(document.getElementById('subjectLine').value);
     const body = encodeURIComponent(document.getElementById('emailBody').value);
     window.open('https://outlook.live.com/mail/0/deeplink/compose?subject=' + subject + '&body=' + body);
@@ -142,13 +142,13 @@ function openInOutlook() {
 
 // localStorage helpers (still used for settings)
 
-function saveData(key, value) {
+export function saveData(key, value) {
     localStorage.setItem(key, JSON.stringify(value));
 }
 // stores data in the browser permanently
 // only accepts strings. JSON.stringify() converts JS objects/arrays into a string first
 
-function loadData(key) {
+export function loadData(key) {
     const data = localStorage.getItem(key);
     return data ? JSON.parse(data) : null;
 }
@@ -161,7 +161,7 @@ function loadData(key) {
 
 // Transaction API (async talks to PHP backend now)
 
-async function getTransactions() {
+export async function getTransactions() {
     const response = await fetch('api/transactions.php');
     const data = await response.json();
     return data;
@@ -171,7 +171,7 @@ async function getTransactions() {
 // await pauses here until the server responds before continuing
 // response.json() parses the JSON string back into a JS array
 
-async function apiPost(transaction) {
+export async function apiPost(transaction) {
     // sends a new transaction to the server (INSERT)
     const response = await fetch('api/transactions.php', {
         method: 'POST',
@@ -183,7 +183,7 @@ async function apiPost(transaction) {
 // method: 'POST' tells PHP this is an insert operation
 // body: JSON.stringify() converts the JS object into a JSON string for PHP to read
 
-async function apiPut(transaction) {
+export async function apiPut(transaction) {
     // sends an updated transaction to the server (UPDATE)
     const response = await fetch('api/transactions.php', {
         method: 'PUT', // PUT tells PHP this is an update, not a new insert
@@ -193,7 +193,7 @@ async function apiPut(transaction) {
     return await response.json();
 }
 
-async function apiDelete(fileID) {
+export async function apiDelete(fileID) {
     // tells server to delete a transaction by File ID
     const response = await fetch('api/transactions.php?fileID=' + fileID, {
         method: 'DELETE' // DELETE tells PHP to remove the record
@@ -206,7 +206,7 @@ async function apiDelete(fileID) {
 
 // Utility functions (synchronous so no server needed)
 
-function daysToClose(closingDate) {
+export function daysToClose(closingDate) {
     if (!closingDate) return '—'; // returns a dash if no closing date was entered
     const today = new Date();
     const closing = new Date(closingDate);
@@ -217,7 +217,7 @@ function daysToClose(closingDate) {
 // dividing by ms-per-day converts to days
 // then Math.ceil rounds up so partial days count as a full day
 
-function autoRisk(transaction) {
+export function autoRisk(transaction) {
     const days = daysToClose(transaction.closingDate);
     const milestones = [
         transaction.earnestMoneyReceived,
@@ -240,7 +240,7 @@ function autoRisk(transaction) {
 
 // Render dashboard (now async)
 
-async function renderDashboard() {
+export async function renderDashboard() {
     const transactions = await getTransactions();
     // await: "dashboard can't show up until server sends transaction data"
 
@@ -349,7 +349,7 @@ async function renderDashboard() {
 
 // CRUD operations (now async! talk to PHP API.)
 
-async function deleteTransaction(fileID) {
+export async function deleteTransaction(fileID) {
     if (!confirm('Are you sure you want to delete ' + fileID + '?')) return;
     // confirm() pops up a browser dialog. if they click Cancel, return exits early and nothing gets deleted
     await apiDelete(fileID);
@@ -357,7 +357,7 @@ async function deleteTransaction(fileID) {
     await renderTransactions();
 }
 
-async function loadTransactionForEdit(fileID) {
+export async function loadTransactionForEdit(fileID) {
     const transactions = await getTransactions();
     // await: "need the data from server before we can fill the form"
     const t = transactions.find(t => t.fileID === fileID);
@@ -411,7 +411,7 @@ async function loadTransactionForEdit(fileID) {
 let currentComposerDeal = null;
 // stored outside the function so other functions (loadTemplate, closeComposer) can access the same deal
 
-async function openComposer(fileID) {
+export async function openComposer(fileID) {
     const transactions = await getTransactions();
     // await: "Im going to need server data to write the email template first..."
     currentComposerDeal = transactions.find(t => t.fileID === fileID);
@@ -424,12 +424,12 @@ async function openComposer(fileID) {
     document.getElementById('emailComposer').scrollIntoView({ behavior: 'smooth' }); // scrolls down to it smoothly
 }
 
-function closeComposer() {
+export function closeComposer() {
     document.getElementById('emailComposer').style.display = 'none'; // hides the panel
     currentComposerDeal = null; // clears the stored deal so the next Email click starts fresh
 }
 
-function getSignature() {
+export function getSignature() {
     // settings still come from localStorage (no API call needed)
     const settings = loadData('tcSettings') || {};
     // || {} means "if no settings saved yet, use an empty object so the template strings don't crash"
@@ -444,7 +444,7 @@ ${settings.linkedInUrl ? 'LinkedIn: ' + settings.linkedInUrl : ''}
     `.trim();
 }
 
-function loadTemplate() {
+export function loadTemplate() {
     const t = currentComposerDeal;
     if (!t) return;
     const template = document.getElementById('templateSelect').value;

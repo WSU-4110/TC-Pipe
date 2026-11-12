@@ -13,9 +13,13 @@ body{
 
 /* Sidebar */
 #sidebar {
-    width: 220px; /*fixed width so it never shrinks regardless of screen size*/
-    background-color: #1B2A3B; /*deep navy which gives the app a professional dashboard feel*/
+    width: 220px;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    background-color: #1B2A3B;
     padding: 10px;
+    flex-shrink: 0;
 }
 
 #brand {
