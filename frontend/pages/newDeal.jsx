@@ -1,0 +1,381 @@
+import {useState} from 'react';
+import "./styleSheets/style.css";
+import "./scripts/app.js";
+
+
+function NewDeal() {
+
+    const [formData, setFormData] = useState({
+        fileID: '',
+        address: '',
+        clientName: '',
+        stage: 'Lead',
+        closingDate: '',
+        riskLevel: 'Low'
+    });
+
+    // when field or input changes update the corresponding value in formData state
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prevState => ({
+            ...prevState,
+            [name]: value
+        }));
+    }
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+
+        console.log("sending data to SQL database: ", formData);
+
+        // enter the fetch and post request to the backend here to send the formData to the SQL database
+    }
+
+    return (
+        <>
+            <div id="app">
+                <div id="sidebar">
+                    <a onClick={() => navigate('/dashboard')} id="brand">TC Pipeline</a>
+                    <a href="/dashboard" onClick={() => navigate('/dashboard')}>Dashboard</a>
+                    <a href="/newDeal" onClick={() => navigate('/newDeal')}>New Deal</a>
+                    <a href="/transactions" onClick={() => navigate('/transactions')}>Transactions</a>
+                    <a href="/settings" onClick={() => navigate('/settings')}>Settings</a>
+                </div>
+                <div id="main">
+                    <h1>Add Transaction</h1>
+                    <form onSubmit={handleSubmit} className="deal-form">
+                        <fieldset>
+                            <legend>Basic Info</legend>
+                            <div className="field-grid">
+                                <div className="field">
+                                    <label htmlFor="fileID">File ID</label>
+                                    <input 
+                                        type="text" 
+                                        id="fileID"
+                                        value={formData.fileID}
+                                        onChange={handleChange}
+                                        placeholder="Enter File ID"
+                                    />
+                                </div>
+                                <div className="field">
+                                    <label htmlFor="side">Side</label>
+                                    <select id="side">
+                                        <option value="" default>Select Side</option>
+                                        <option value="buyer">Buyer</option>
+                                        <option value="seller">Seller</option>
+                                        <option value="dual">Dual Agency</option>
+                                    </select>
+                                </div>
+                                <div className="field">
+                                    <label htmlFor="propertyType">Property Type</label>
+                                    <select id="propertyType">
+                                        <option value="" default>Select Property Type</option>
+                                        <option value="singleFamily">Single Family</option>
+                                        <option value="condoOrTownhouse">Condo/Townhouse</option>
+                                        <option value="multiFamily">Multi-Family</option>
+                                        <option value="commercial">Commercial</option>
+                                        <option value="landOrLot">Land/Lot</option>
+                                    </select>
+                                </div>
+                                <div className="field">
+                                    <label htmlFor="transactionType">Transaction Type</label>
+                                    <select id="transactionType">
+                                        <option value="" default>Select Type</option>
+                                        <option value="standardSale">Standard Sale</option>
+                                        <option value="shortSale">Short Sale</option>
+                                        <option value="reoOrBankOwned">REO/Bank Owned</option>
+                                        <option value="newConstruction">New Construction</option>
+                                    </select>
+                                </div>
+                                <div className="field">
+                                    <label htmlFor="stage">Stage</label>
+                                    <select id="stage">
+                                        <option value="" default>Select Stage</option>
+                                        <option value="pre-contract">Pre-Contract</option>
+                                        <option value="active">Active</option>
+                                        <option value="inspection">Inspection</option>
+                                        <option value="appraisal">Appraisal</option>
+                                        <option value="underwriting">Underwriting</option>
+                                        <option value="clear-to-close">Clear to Close</option>
+                                        <option value="closed">Closed</option>
+                                        <option value="terminated">Terminated</option>
+                                    </select>
+                                </div>
+                                <div className="field">
+                                    <label htmlFor="mlsNumber">MLS Number</label>
+                                    <input 
+                                        type="text"
+                                        id="mlsNumber"
+                                    />
+                                </div>
+                            </div>
+                        </fieldset>
+
+                        <fieldset>
+                            <legend>Parties</legend>
+                            <div className="field-grid">
+                                <div className="field">
+                                    <label htmlFor="buyerName">Buyer Name</label>
+                                    <input 
+                                        type="text" 
+                                        id="buyerName"
+                                    />
+                                </div>
+                                <div className="field">
+                                    <label htmlFor="sellerName">Seller Name</label>
+                                    <input 
+                                        type="text" 
+                                        id="sellerName"
+                                    />
+                                </div>
+                                <div className="field">
+                                    <label htmlFor="listingAgent">Listing Agent</label>
+                                    <input 
+                                        type="text" 
+                                        id="listingAgent"
+                                    />
+                                </div>
+                                <div className="field">
+                                    <label htmlFor="assignee">Assigned To</label>
+                                    <input 
+                                        type="text" 
+                                        id="assignee"
+                                    />
+                                </div>
+                            </div>
+                        </fieldset>
+
+                        {/* <!-- DATES & DEADLINES --> */}
+                        <fieldset>
+                            <legend>Dates & Deadlines</legend>
+                            <div className="field-grid">
+                                <div className="field">
+                                    <label htmlFor="contractDate">Contract Date</label>
+                                    <input 
+                                        type="date" 
+                                        id="contractDate"
+                                    />
+                                </div>
+                                <div className="field">
+                                    <label htmlFor="closingDate">Closing Date</label>
+                                    <input 
+                                        type="date" 
+                                        id="closingDate"
+                                    />
+                                </div>
+                                <div className="field">
+                                    <label htmlFor="closingTime">Closing Time</label>
+                                    <input 
+                                        type="time" 
+                                        id="closingTime"
+                                    />
+                                </div>
+                                <div className="field">
+                                    <label htmlFor="emdDueDate">EMD Due Date</label>
+                                    <input 
+                                        type="date" 
+                                        id="emdDueDate"
+                                    />
+                                </div>
+                                <div className="field">
+                                    <label htmlFor="inspectionDeadline">Inspection Deadline</label>
+                                    <input 
+                                        type="date" 
+                                        id="inspectionDeadline"
+                                    />
+                                </div>
+                                <div className="field">
+                                    <label htmlFor="appraisalDeadline">Appraisal Deadline</label>
+                                    <input 
+                                        type="date" 
+                                        id="appraisalDeadline"
+                                    />
+                                </div>
+                                <div className="field">
+                                    <label htmlFor ="financingContingencyDeadline">Financing Contingency Deadline</label>
+                                    <input 
+                                        type="date" 
+                                        id="financingContingencyDeadline"
+                                    />
+                                </div>
+                            </div>
+                        </fieldset>
+
+                        <fieldset>
+                            <legend>Location</legend>
+                            <div className="field-grid">
+                                <div className="field">
+                                    <label htmlFor="propertyAddress">Property Address</label>
+                                    <input 
+                                        type="text" 
+                                        id="propertyAddress"
+                                    />
+                                </div>
+                                <div className="field">
+                                    <label htmlFor="closingLocation">Closing Location</label>
+                                    <input 
+                                        type="text" 
+                                        id="closingLocation"
+                                    />
+                                </div>
+                            </div>
+                        </fieldset>
+
+                        <fieldset>
+                            <legend>Financials</legend>
+                            <div className="field-grid">
+                                <div className="field">
+                                    <label htmlFor="purchasePrice">Purchase Price ($)</label>
+                                    <input 
+                                        type="number" 
+                                        id="purchasePrice"
+                                    />
+                                </div>
+                                <div className="field">
+                                    <label htmlFor="listingPrice">Listing Price ($)</label>
+                                    <input 
+                                        type="number" 
+                                        id="listingPrice"
+                                    />
+                                </div>
+                                <div className="field">
+                                    <label htmlFor="emdAmount">EMD Amount ($)</label>
+                                    <input 
+                                        type="number" 
+                                        id="emdAmount"
+                                    />
+                                </div>
+                            </div>
+                        </fieldset>
+
+                        <fieldset>
+                            <legend>Title & Lender</legend>
+                            <div className="field-grid">
+                                <div className="field">
+                                    <label htmlFor="titleCompanyName">Title Company Name</label>
+                                    <input 
+                                        type="text" 
+                                        id="titleCompanyName"
+                                    />
+                                </div>
+                                <div className="field">
+                                    <label htmlFor="titleCompanyContact">Title Company Contact</label>
+                                    <input 
+                                        type="text" 
+                                        id="titleCompanyContact"
+                                    />
+                                </div>
+                                <div className="field">
+                                    <label htmlFor="lenderName">Lender Name</label>
+                                    <input 
+                                        type="text" 
+                                        id="lenderName"
+                                    />
+                                </div>
+                                <div className="field">
+                                    <label htmlFor="lenderContact">Lender Contact</label>
+                                    <input 
+                                        type="text" 
+                                        id="lenderContact"
+                                    />
+                                </div>
+                            </div>
+                        </fieldset>
+
+                        <fieldset>
+                            <legend>Risk & Notes</legend>
+                            <div className="field-grid">
+                                <div className="field">
+                                    <label htmlFor="riskLevel">Risk Level</label>
+                                    <select id="riskLevel">
+                                        <option value="" default>Select Risk Level</option>
+                                        <option value="low">Low</option>
+                                        <option value="medium">Medium</option>
+                                        <option value="high">High</option>
+                                    </select>
+                                </div>
+                                <div className="field">
+                                    <label htmlFor="nextAction">Next Action</label>
+                                    <input 
+                                        type="text" 
+                                        id="nextAction"
+                                    />
+                                </div>
+                                <div className="field">
+                                    <label htmlFor="nextActionDue">Next Action Due Date</label>
+                                    <input 
+                                        type="date" 
+                                        id="nextActionDue"
+                                    />
+                                </div>
+                                <div className="field">
+                                    <label htmlFor="blocker">Blocker</label>
+                                    <input 
+                                        type="text" 
+                                        id="blocker"
+                                    />
+                                </div>
+                                <div className="field" style={{ gridColumn: 'span 2' }}>
+                                    <label htmlFor="notes">Notes</label>
+                                    <textarea id="notes"></textarea>
+                                </div>
+                            </div>
+                        </fieldset>
+
+                        <fieldset>
+                            <legend>Milestones</legend>
+                            <div className="milestone-grid">
+                                <div className="milestone-item">
+                                    <input 
+                                        type="checkbox" 
+                                        id="earnestMoneyReceived"
+                                    />
+                                    <label htmlFor="earnestMoneyReceived">Earnest Money Received</label>
+                                </div>
+                                <div className="milestone-item">
+                                    <input 
+                                        type="checkbox" 
+                                        id="inspectionComplete"
+                                    />
+                                    <label htmlFor="inspectionComplete">Inspection Complete</label>
+                                </div>
+                                <div className="milestone-item">
+                                    <input 
+                                        type="checkbox" 
+                                        id="appraisalReceived"
+                                    />
+                                    <label htmlFor="appraisalReceived">Appraisal Received</label>
+                                </div>
+                                <div className="milestone-item">
+                                    <input 
+                                        type="checkbox" 
+                                        id="titleClear"
+                                    />
+                                    <label htmlFor="titleClear">Title Clear</label>
+                                </div>
+                                <div className="milestone-item">
+                                    <input 
+                                        type="checkbox" 
+                                        id="insuranceConfirmed"
+                                    />
+                                    <label htmlFor="insuranceConfirmed">Insurance Confirmed</label>
+                                </div>
+                                <div className="milestone-item">
+                                    <input 
+                                        type="checkbox" 
+                                        id="clearToCloseConfirmed"
+                                    />
+                                    <label htmlFor="clearToCloseConfirmed">Clear to Close Confirmed</label>
+                                </div>
+                            </div>
+                        </fieldset>
+
+                        <button type="submit">Save Deal</button>
+
+                    </form>
+                </div>
+            </div>
+        </>
+    )
+}
+export default NewDeal

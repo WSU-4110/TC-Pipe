@@ -13,8 +13,12 @@
   "type": "commonjs",
   "dependencies": {
     "cors": "^2.8.6",
+    "dotenv": "^18.0.10",
     "express": "^5.3.0",
+    "jsonwebtoken": "^9.0.3",
     "mysql": "^2.18.1",
+    "mysql2": "^3.24.6",
+    "nanoid": "^3.3.20",
     "nodemon": "^1.14.10"
   }
 }
