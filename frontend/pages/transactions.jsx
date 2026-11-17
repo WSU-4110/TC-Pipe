@@ -34,6 +34,12 @@ function transactions() {
         appScript.renderTransactions(searchTerm, event.target.value, riskFilter);
     }
 
+    // ======================== LOGOUT ========================= //
+    const logout = () => {
+        localStorage.removeItem('token');
+        navigate('/login');
+    };
+
     // ======================== TRANSACTIONS UI ========================= //
     return (
         <>
@@ -44,6 +50,7 @@ function transactions() {
                     <a href="/newDeal" onClick={(e) => { navigate('/newDeal')}}>New Deal</a>
                     <a href="/transactions" onClick={(e) => { navigate('/transactions')}}>Transactions</a>
                     <a href="/settings" onClick={(e) => { navigate('/settings')}}>Settings</a>
+                    <a onClick={logout} style={{ cursor: 'pointer' }}>Log Out</a>
 
 
                 </div>

@@ -38,16 +38,26 @@ function NewDeal() {
         // enter the fetch and post request to the backend here to send the formData to the SQL database
     }
 
+
+    // ======================== LOGOUT ========================= //
+
+    // logout function to clear the token and navigate back to login page
+    const logout = () => {
+        localStorage.removeItem('token');
+        navigate('/login');
+    };
+
     // ======================== NEW DEAL UI ========================= //
     return (
         <>
             <div id="app">
                 <div id="sidebar">
-                    <a onClick={() => navigate('/dashboard')} id="brand">TC Pipeline</a>
+                    <a href='/dashboard' onClick={() => navigate('/dashboard')} id="brand">TC Pipeline</a>
                     <a href="/dashboard" onClick={() => navigate('/dashboard')}>Dashboard</a>
                     <a href="/newDeal" onClick={() => navigate('/newDeal')}>New Deal</a>
                     <a href="/transactions" onClick={() => navigate('/transactions')}>Transactions</a>
                     <a href="/settings" onClick={() => navigate('/settings')}>Settings</a>
+                    <a onClick={logout} style={{ cursor: 'pointer' }}>Log Out</a>
                 </div>
                 <div id="main">
                     <h1>Add Transaction</h1>

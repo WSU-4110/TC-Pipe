@@ -91,7 +91,7 @@ function Dashboard() {
         <>
             <div id="app">
                 <div id="sidebar">
-                    <a onClick={() => navigate('/dashboard')} id="brand">TC Pipeline</a>
+                    <a href='/dashboard' onClick={() => navigate('/dashboard')} id="brand">TC Pipeline</a>
                     <a href="/dashboard" onClick={() => navigate('/dashboard')}>Dashboard</a>
                     <a href="/newDeal" onClick={() => navigate('/newDeal')}>New Deal</a>
                     <a href="/transactions" onClick={() => navigate('/transactions')}>Transactions</a>
