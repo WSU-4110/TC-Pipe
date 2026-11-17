@@ -3,6 +3,13 @@ const express = require('express');
 const cors = require('cors');
 const mysql = require('mysql2');
 
+const multer = require('multer');
+const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+
+const s3 = new S3Client({ region: 'us-east-2' });
+const S3_BUCKET = 'tc-pipeline-assets';
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
+
 // ---------- config ----------
 
 const PORT = Number(process.env.PORT) || 3000;
@@ -61,6 +68,29 @@ function createTableSql() {
         '  createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,\n' +
         '  updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP\n' +
         ') CHARACTER SET utf8mb4';
+}
+
+function createUserTableSql() {
+    return `CREATE TABLE IF NOT EXISTS users (
+        userID VARCHAR(50) NOT NULL PRIMARY KEY,
+        fullName VARCHAR(150) NULL,
+        email VARCHAR(255) NULL,
+        phone VARCHAR(50) NULL,
+        company VARCHAR(150) NULL,
+        role VARCHAR(100) NULL,
+        linkedInUrl VARCHAR(500) NULL,
+        profilePicUrl VARCHAR(500) NULL,
+        theme VARCHAR(20) NOT NULL DEFAULT 'light',
+        defaultTitleCompany VARCHAR(150) NULL,
+        defaultTitleContact VARCHAR(255) NULL,
+        defaultLender VARCHAR(150) NULL,
+        defaultLenderContact VARCHAR(255) NULL,
+        defaultAssignedTo VARCHAR(150) NULL,
+        deadlineReminderDays INT NOT NULL DEFAULT 3,
+        emailNotifications TINYINT(1) NOT NULL DEFAULT 0,
+        createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) CHARACTER SET utf8mb4`;
 }
 
 // ---------- database ----------
@@ -124,6 +154,7 @@ async function initDatabase() {
 
     // 3) make sure the table exists
     await query(createTableSql());
+    await query(createUserTableSql());
 }
 
 // ---------- cleaning data on the way in ----------
@@ -277,6 +308,49 @@ app.get('/api/health', async (req, res) => {
 
 // Both URLs work, so the existing app.js (which calls api/transactions.php) needs no changes.
 app.use(['/api/transactions', '/api/transactions.php'], router);
+
+// GET /api/user — load profile (creates default record on first visit)
+app.get('/api/user', async (req, res) => {
+    try {
+        let rows = await query('SELECT * FROM users WHERE userID = ?', ['default']);
+        if (rows.length === 0) {
+            await query('INSERT INTO users (userID) VALUES (?)', ['default']);
+            rows = await query('SELECT * FROM users WHERE userID = ?', ['default']);
+        }
+        res.json(rows[0]);
+    } catch (err) {
+        console.error('GET /api/user error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// PUT /api/user — update profile fields
+app.put('/api/user', async (req, res) => {
+    try {
+        const ALL_FIELDS = [
+            'fullName','email','phone','company','role','linkedInUrl',
+            'defaultTitleCompany','defaultTitleContact','defaultLender',
+            'defaultLenderContact','defaultAssignedTo',
+            'emailNotifications','deadlineReminderDays','profilePicUrl'
+        ];
+        const data = req.body;
+        const fields = ALL_FIELDS.filter(f => Object.prototype.hasOwnProperty.call(data, f));
+        if (fields.length === 0) return res.json({ success: true });
+
+        const setClauses = fields.map(f => `${f} = ?`).join(', ');
+        const values = fields.map(f => data[f] !== undefined ? data[f] : null);
+
+        await query(
+            `INSERT INTO users (userID, ${fields.join(', ')}) VALUES ('default', ${fields.map(() => '?').join(', ')})
+             ON DUPLICATE KEY UPDATE ${setClauses}`,
+            [...values, ...values]
+        );
+        res.json({ success: true });
+    } catch (err) {
+        console.error('PUT /api/user error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
 
 // Anything else under /api is a JSON 404 instead of an HTML error page.
 app.use('/api', (req, res) => res.status(404).json({ success: false, error: 'Not found.' }));

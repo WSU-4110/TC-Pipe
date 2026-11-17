@@ -1,65 +1,687 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Pipeline Tracker | Settings</title>
-    <link rel="stylesheet" href="./src/assets/style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Settings — TC Pipeline</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Tokens ───────────────────────────────────────────── */
+    :root {
+      --bg:         #0d1521;
+      --surface:    #152032;
+      --surface2:   #1c2d42;
+      --border:     #243348;
+      --border2:    #2e4160;
+      --text:       #e2eaf4;
+      --muted:      #7a95b2;
+      --accent:     #3b82f6;
+      --accent-h:   #2563eb;
+      --success:    #22c55e;
+      --danger:     #ef4444;
+      --nav-h:      60px;
+      color-scheme: dark;
+    }
+
+    /* ── Reset ───────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      font-size: 14px;
+    }
+    a { color: inherit; text-decoration: none; }
+
+    /* ── Top Nav ─────────────────────────────────────────── */
+    .top-nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      height: var(--nav-h);
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      gap: 32px;
+    }
+    .nav-brand {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+      white-space: nowrap;
+      letter-spacing: -0.3px;
+    }
+    .nav-brand span { color: var(--accent); }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex: 1;
+    }
+    .nav-links a {
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13.5px;
+      font-weight: 500;
+      color: var(--muted);
+      transition: background .15s, color .15s;
+      white-space: nowrap;
+    }
+    .nav-links a:hover { background: var(--surface2); color: var(--text); }
+    .nav-links a.active { background: var(--surface2); color: var(--text); }
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-left: auto;
+    }
+    .nav-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: 2px solid var(--border2);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+      overflow: hidden;
+      transition: border-color .2s;
+      flex-shrink: 0;
+    }
+    .nav-avatar:hover { border-color: var(--accent); }
+    .nav-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+    /* ── Page Layout ─────────────────────────────────────── */
+    .page-wrap {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 36px 24px 80px;
+    }
+    .page-header {
+      margin-bottom: 28px;
+    }
+    .page-header h1 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.4px;
+    }
+    .page-header p {
+      color: var(--muted);
+      margin-top: 4px;
+      font-size: 13.5px;
+    }
+
+    /* ── Cards / Sections ────────────────────────────────── */
+    .settings-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    .settings-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .settings-card-header h2 {
+      font-size: 15px;
+      font-weight: 600;
+    }
+    .settings-card-header p {
+      font-size: 12.5px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    /* ── Profile Photo ───────────────────────────────────── */
+    .profile-photo-row {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+    .photo-circle {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: 3px solid var(--border2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      font-weight: 700;
+      color: #fff;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .photo-circle img { width: 100%; height: 100%; object-fit: cover; }
+    .photo-actions { display: flex; flex-direction: column; gap: 8px; }
+    .photo-actions p { font-size: 12px; color: var(--muted); }
+
+    /* ── Form Grid ───────────────────────────────────────── */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .form-grid .full { grid-column: 1 / -1; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group label {
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--muted);
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+    }
+    .form-group input,
+    .form-group select {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 9px 12px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 13.5px;
+      outline: none;
+      transition: border-color .15s;
+      width: 100%;
+    }
+    .form-group input:focus,
+    .form-group select:focus { border-color: var(--accent); }
+    .form-group input::placeholder { color: var(--muted); opacity: .6; }
+
+    /* ── Toggle ──────────────────────────────────────────── */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .toggle-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .toggle-row:first-child { padding-top: 0; }
+    .toggle-label { font-size: 13.5px; font-weight: 500; }
+    .toggle-desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .toggle {
+      position: relative;
+      width: 40px;
+      height: 22px;
+      flex-shrink: 0;
+    }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute;
+      inset: 0;
+      background: var(--border2);
+      border-radius: 11px;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .slider::before {
+      content: '';
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      background: #fff;
+      border-radius: 50%;
+      top: 3px;
+      left: 3px;
+      transition: transform .2s;
+    }
+    .toggle input:checked + .slider { background: var(--accent); }
+    .toggle input:checked + .slider::before { transform: translateX(18px); }
+
+    /* ── Buttons ─────────────────────────────────────────── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13.5px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      font-family: inherit;
+      transition: background .15s, opacity .15s;
+    }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent-h); }
+    .btn-ghost {
+      background: var(--surface2);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover { background: var(--border2); }
+    .btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); }
+    .btn-danger:hover { background: rgba(239,68,68,.1); }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-sm { padding: 6px 12px; font-size: 12.5px; }
+
+    .save-row {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── Toast ───────────────────────────────────────────── */
+    #toast {
+      position: fixed;
+      bottom: 90px;
+      right: 24px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 18px;
+      font-size: 13.5px;
+      font-weight: 500;
+      box-shadow: 0 8px 24px rgba(0,0,0,.4);
+      z-index: 999;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity .25s, transform .25s;
+      pointer-events: none;
+      max-width: 280px;
+    }
+    #toast.show { opacity: 1; transform: translateY(0); }
+    #toast.success { border-color: var(--success); color: var(--success); }
+    #toast.error   { border-color: var(--danger);  color: var(--danger); }
+
+    /* ── Chatbot Button ──────────────────────────────────── */
+    #chatbot-btn {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      box-shadow: 0 4px 16px rgba(59,130,246,.4);
+      z-index: 200;
+      transition: transform .2s, box-shadow .2s;
+    }
+    #chatbot-btn:hover {
+      transform: scale(1.08);
+      box-shadow: 0 6px 24px rgba(59,130,246,.55);
+    }
+
+    /* ── Spinner ─────────────────────────────────────────── */
+    .spin {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .6s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Responsive ──────────────────────────────────────── */
+    @media (max-width: 600px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .form-grid .full { grid-column: 1; }
+      .nav-links a { font-size: 12.5px; padding: 6px 8px; }
+      .page-wrap { padding: 24px 16px 80px; }
+    }
+  </style>
 </head>
 <body>
-<div id="app">
-    <div id="sidebar">
-        <a href="index.html" id="brand">TC Pipeline</a>
-        <a href="index.html">Dashboard</a>
-        <a href="add.html">New Deal</a>
-        <a href="transactions.html">Transactions</a>
-        <a href="analyzer.html">Analyzer</a>
-        <a href="settings.html">Settings</a>
-    </div>
-    <div id="main">
-        <h1>Settings</h1>
-        <form id="settingsForm">
-            <fieldset>
-                <legend>User Settings</legend>
-                <div class="field-grid">
-                    <div class="field">
-                        <label for="fullName">Full Name</label>
-                        <input type="text" id="fullName">
-                    </div>
-                    <div class="field">
-                        <label for="email">Email</label>
-                        <input type="email" id="email">
-                    </div>
-                    <div class="field">
-                        <label for="phoneNumber">Phone Number</label>
-                        <input type="text" id="phoneNumber">
-                    </div>
-                    <div class="field">
-                        <label for="companyOrBrokerage">Company / Brokerage</label>
-                        <input type="text" id="companyOrBrokerage">
-                    </div>
-                    <div class="field">
-                        <label for="titleOrRole">Title / Role</label>
-                        <input type="text" id="titleOrRole">
-                    </div>
-                    <div class="field">
-                        <label for="linkedInUrl">LinkedIn URL</label>
-                        <input type="text" id="linkedInUrl">
-                    </div>
-                </div>
-            </fieldset>
-            <button type="submit">Save Settings</button>
-        </form>
-    </div>
-</div>
-<script src="app.js"></script> <!-- loads shared app functions (saveSettings, loadSettings) -->
-<script>
-    /* wire the form's submit event to saveSettings() in app.js
-       e.preventDefault() inside saveSettings stops the page from reloading on submit */
-    document.getElementById('settingsForm').addEventListener('submit', saveSettings);
 
-    /* pre-fills  form fields with whatever was saved in localStorage
-       runs immediately on page load so the TC never sees any empty fields after saving once */
-    loadSettings();
+<!-- ── Top Nav ──────────────────────────────────────────────── -->
+<nav class="top-nav">
+  <div class="nav-brand">TC<span>Pipeline</span></div>
+  <div class="nav-links">
+    <a href="index.html">Dashboard</a>
+    <a href="add.html">New Deal</a>
+    <a href="transactions.html">Transactions</a>
+    <a href="settings.html" class="active">Settings</a>
+    <a href="help.html">Help</a>
+  </div>
+  <div class="nav-right">
+    <div class="nav-avatar" id="navAvatar" title="Profile">JB</div>
+  </div>
+</nav>
+
+<!-- ── Page ─────────────────────────────────────────────────── -->
+<div class="page-wrap">
+  <div class="page-header">
+    <h1>Settings</h1>
+    <p>Manage your profile, preferences, and deal defaults.</p>
+  </div>
+
+  <!-- Profile -->
+  <div class="settings-card">
+    <div class="settings-card-header">
+      <div>
+        <h2>Profile</h2>
+        <p>Your name and contact info shown across the app.</p>
+      </div>
+    </div>
+
+    <div class="profile-photo-row">
+      <div class="photo-circle" id="photoCircle">
+        <span id="photoInitials">?</span>
+      </div>
+      <div class="photo-actions">
+        <input type="file" id="photoInput" accept="image/*" style="display:none" />
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('photoInput').click()">
+          Upload Photo
+        </button>
+        <p>JPG or PNG · Max 5 MB</p>
+      </div>
+    </div>
+
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" id="fullName" placeholder="Julian Boone" />
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="email" placeholder="you@example.com" />
+      </div>
+      <div class="form-group">
+        <label>Phone</label>
+        <input type="tel" id="phone" placeholder="(555) 000-0000" />
+      </div>
+      <div class="form-group">
+        <label>Company</label>
+        <input type="text" id="company" placeholder="Boone Realty" />
+      </div>
+      <div class="form-group">
+        <label>Role</label>
+        <input type="text" id="role" placeholder="Transaction Coordinator" />
+      </div>
+      <div class="form-group">
+        <label>LinkedIn URL</label>
+        <input type="url" id="linkedInUrl" placeholder="https://linkedin.com/in/..." />
+      </div>
+    </div>
+
+    <div class="save-row">
+      <button class="btn btn-primary" id="saveProfileBtn" onclick="saveProfile()">
+        Save Profile
+      </button>
+    </div>
+  </div>
+
+  <!-- Deal Defaults -->
+  <div class="settings-card">
+    <div class="settings-card-header">
+      <div>
+        <h2>Deal Defaults</h2>
+        <p>Pre-fill these fields whenever you create a new deal.</p>
+      </div>
+    </div>
+
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Default Title Company</label>
+        <input type="text" id="defaultTitleCompany" placeholder="ABC Title Co." />
+      </div>
+      <div class="form-group">
+        <label>Default Title Contact</label>
+        <input type="text" id="defaultTitleContact" placeholder="Jane Smith" />
+      </div>
+      <div class="form-group">
+        <label>Default Lender</label>
+        <input type="text" id="defaultLender" placeholder="First National Bank" />
+      </div>
+      <div class="form-group">
+        <label>Default Lender Contact</label>
+        <input type="text" id="defaultLenderContact" placeholder="John Doe" />
+      </div>
+      <div class="form-group full">
+        <label>Default Assigned To</label>
+        <input type="text" id="defaultAssignedTo" placeholder="Your name or team member" />
+      </div>
+    </div>
+
+    <div class="save-row">
+      <button class="btn btn-primary" onclick="saveDealDefaults()">Save Defaults</button>
+    </div>
+  </div>
+
+  <!-- Preferences -->
+  <div class="settings-card">
+    <div class="settings-card-header">
+      <div>
+        <h2>Preferences</h2>
+        <p>Notifications and app behavior.</p>
+      </div>
+    </div>
+
+    <div class="toggle-row">
+      <div>
+        <div class="toggle-label">Email Notifications</div>
+        <div class="toggle-desc">Receive deal updates and reminders by email.</div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="emailNotifications" onchange="savePreferences()" />
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="toggle-row">
+      <div>
+        <div class="toggle-label">Deadline Reminder</div>
+        <div class="toggle-desc">Days before a deadline to send a reminder.</div>
+      </div>
+      <select id="deadlineReminderDays" onchange="savePreferences()"
+        style="width:80px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text);font-family:inherit;font-size:13.5px;outline:none;">
+        <option value="1">1 day</option>
+        <option value="2">2 days</option>
+        <option value="3" selected>3 days</option>
+        <option value="5">5 days</option>
+        <option value="7">7 days</option>
+      </select>
+    </div>
+  </div>
+
+</div><!-- /page-wrap -->
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- Chatbot Button -->
+<button id="chatbot-btn" title="TC Pipeline Assistant" onclick="alert('Chatbot coming soon!')">
+  🤖
+</button>
+
+<script>
+  /* ── API base ──────────────────────────────────────────── */
+  // Change this if your EB URL differs
+  const API = window.location.port === '5500'
+    ? 'http://tc-pipeline-env.eba-ugimqn2k.us-east-2.elasticbeanstalk.com'
+    : '';   // empty = same origin on EB
+
+  /* ── Load user on page load ────────────────────────────── */
+  let userData = {};
+
+  async function loadUser() {
+    try {
+      const res = await fetch(API + '/api/user');
+      if (!res.ok) throw new Error('Failed to load');
+      userData = await res.json();
+      populateForm(userData);
+    } catch (e) {
+      showToast('Could not load settings.', 'error');
+    }
+  }
+
+  function populateForm(d) {
+    setVal('fullName',              d.fullName);
+    setVal('email',                 d.email);
+    setVal('phone',                 d.phone);
+    setVal('company',               d.company);
+    setVal('role',                  d.role);
+    setVal('linkedInUrl',           d.linkedInUrl);
+    setVal('defaultTitleCompany',   d.defaultTitleCompany);
+    setVal('defaultTitleContact',   d.defaultTitleContact);
+    setVal('defaultLender',         d.defaultLender);
+    setVal('defaultLenderContact',  d.defaultLenderContact);
+    setVal('defaultAssignedTo',     d.defaultAssignedTo);
+
+    const reminderEl = document.getElementById('deadlineReminderDays');
+    if (d.deadlineReminderDays) reminderEl.value = d.deadlineReminderDays;
+    document.getElementById('emailNotifications').checked = !!d.emailNotifications;
+
+    updateAvatars(d.fullName, d.profilePicUrl);
+  }
+
+  function setVal(id, val) {
+    const el = document.getElementById(id);
+    if (el && val != null) el.value = val;
+  }
+
+  function updateAvatars(name, photoUrl) {
+    const initials = name
+      ? name.trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase()
+      : '?';
+
+    // Nav avatar
+    const nav = document.getElementById('navAvatar');
+    // Large photo circle
+    const circle = document.getElementById('photoCircle');
+    const initialsEl = document.getElementById('photoInitials');
+
+    nav.textContent = '';
+    circle.innerHTML = '';
+
+    if (photoUrl) {
+      const img1 = document.createElement('img');
+      img1.src = photoUrl;
+      nav.appendChild(img1);
+
+      const img2 = document.createElement('img');
+      img2.src = photoUrl;
+      circle.appendChild(img2);
+    } else {
+      nav.textContent = initials;
+      const span = document.createElement('span');
+      span.id = 'photoInitials';
+      span.textContent = initials;
+      circle.appendChild(span);
+    }
+  }
+
+  /* ── Save helpers ──────────────────────────────────────── */
+  async function putUser(fields) {
+    const res = await fetch(API + '/api/user', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(fields)
+    });
+    if (!res.ok) throw new Error('Save failed');
+    return res.json();
+  }
+
+  async function saveProfile() {
+    const btn = document.getElementById('saveProfileBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spin"></span> Saving…';
+    try {
+      await putUser({
+        fullName:    document.getElementById('fullName').value.trim(),
+        email:       document.getElementById('email').value.trim(),
+        phone:       document.getElementById('phone').value.trim(),
+        company:     document.getElementById('company').value.trim(),
+        role:        document.getElementById('role').value.trim(),
+        linkedInUrl: document.getElementById('linkedInUrl').value.trim(),
+      });
+      updateAvatars(document.getElementById('fullName').value.trim(), userData.profilePicUrl);
+      showToast('Profile saved.', 'success');
+    } catch (e) {
+      showToast('Save failed. Try again.', 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Save Profile';
+    }
+  }
+
+  async function saveDealDefaults() {
+    try {
+      await putUser({
+        defaultTitleCompany:  document.getElementById('defaultTitleCompany').value.trim(),
+        defaultTitleContact:  document.getElementById('defaultTitleContact').value.trim(),
+        defaultLender:        document.getElementById('defaultLender').value.trim(),
+        defaultLenderContact: document.getElementById('defaultLenderContact').value.trim(),
+        defaultAssignedTo:    document.getElementById('defaultAssignedTo').value.trim(),
+      });
+      showToast('Deal defaults saved.', 'success');
+    } catch (e) {
+      showToast('Save failed. Try again.', 'error');
+    }
+  }
+
+  async function savePreferences() {
+    try {
+      await putUser({
+        emailNotifications:   document.getElementById('emailNotifications').checked ? 1 : 0,
+        deadlineReminderDays: parseInt(document.getElementById('deadlineReminderDays').value, 10),
+      });
+      showToast('Preferences saved.', 'success');
+    } catch (e) {
+      showToast('Save failed. Try again.', 'error');
+    }
+  }
+
+  /* ── Photo upload ──────────────────────────────────────── */
+  document.getElementById('photoInput').addEventListener('change', async function () {
+    const file = this.files[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { showToast('File too large (max 5 MB).', 'error'); return; }
+
+    const form = new FormData();
+    form.append('photo', file);
+
+    try {
+      const res = await fetch(API + '/api/user/photo', { method: 'POST', body: form });
+      if (!res.ok) throw new Error();
+      const { url } = await res.json();
+      userData.profilePicUrl = url;
+      updateAvatars(document.getElementById('fullName').value.trim(), url);
+      showToast('Photo updated.', 'success');
+    } catch (e) {
+      showToast('Photo upload failed.', 'error');
+    }
+  });
+
+  /* ── Toast ─────────────────────────────────────────────── */
+  let toastTimer;
+  function showToast(msg, type = 'success') {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = 'show ' + type;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { el.className = ''; }, 3000);
+  }
+
+  /* ── Init ──────────────────────────────────────────────── */
+  loadUser();
 </script>
 </body>
 </html>
