@@ -4,6 +4,7 @@ import "./styleSheets/style.css";
 import * as appScript from "./scripts/app.js";
 
 function transactions() {
+    // ======================== ATTRIBUTES ========================= //
     // navigation hook
     const navigate = useNavigate();
     // use states
@@ -11,14 +12,17 @@ function transactions() {
     const [stageFilter, setStageFilter] = useState('');
     const [riskFilter, setRiskFilter] = useState('');
 
-    // render transactions table
+    // ======================== RENDER TRANSACTIONS TABLE ========================= //
     appScript.renderTransactions(searchTerm, stageFilter, riskFilter);
 
+    // ======================== HANDLE FILTER CHANGES ========================= //
+    // Change the search term
     function changeSearchTerm(event) {
         setSearchTerm(event.target.value);
         appScript.renderTransactions(event.target.value, stageFilter, riskFilter);
     }
 
+    // Change the filter by risk
     function changeRiskFilter(event) {
         setRiskFilter(event.target.value);
         appScript.renderTransactions(searchTerm, stageFilter, event.target.value);
@@ -30,7 +34,7 @@ function transactions() {
         appScript.renderTransactions(searchTerm, event.target.value, riskFilter);
     }
 
-    // transactions UI
+    // ======================== TRANSACTIONS UI ========================= //
     return (
         <>
             <div id="app">

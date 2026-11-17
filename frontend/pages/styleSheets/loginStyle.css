@@ -34,6 +34,11 @@ body {
     border: 1px solid #ccc;
     border-radius: 4px;
 }
+.required::after {
+    content: "*";
+    color: red;
+    margin-left: 5px;
+}
 button {
     width: 100%;
     padding: 10px;

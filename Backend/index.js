@@ -5,6 +5,7 @@ const cors = require('cors');
 const mysql = require('mysql2');
 const dotenv = require('dotenv');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
 const { nanoid, customAlphabet } = require('nanoid');
 
 dotenv.config({path: path.join(__dirname, 'server.env')});
@@ -40,10 +41,10 @@ const createDatabaseIfNotExists = () => {
         password VARCHAR(255) NOT NULL,
         firstname VARCHAR(255) NOT NULL,
         lastname VARCHAR(255) NOT NULL,
-        linkedIN VARCHAR(255) UNIQUE default '',
-        phoneNumber VARCHAR(255) UNIQUE default '',
-        brokerageORcompany VARCHAR(255) default '',
-        titleORrole VARCHAR(255) default ''
+        linkedIN VARCHAR(255) default NULL,
+        phoneNumber VARCHAR(255) default NULL,
+        brokerageORcompany VARCHAR(255) default NULL,
+        titleORrole VARCHAR(255) default NULL
         )`, (err) => {(err) ? console.error('Error creating users table:', err) : console.log('Users table created or already exists.')}
     );
 
@@ -106,93 +107,70 @@ const createDatabaseIfNotExists = () => {
 };
 createDatabaseIfNotExists();
 
+console.log({ PORT, HOST, USER, PORT, API_PORT, hasJWT: !!process.env.JWT_SECRET });
 // ===== USER REGISTRATION / USER LOGIN ===== ///
 // registration
 // TODO: Validate user email NEED
 // TODO: Validate linkedIn URL NEED
 // TODO: Validate user phone number NEED
 // TODO: Validate user password strength WANT
-app.post('/register', (req, res) => {
-    const { username, password, email, firstname, lastname, phoneNumber, linkedIn, brokerageORcompany, titleORrole } = req.body;
+app.post('/register', async (req, res) => {
+    const { username, password, email, firstname, lastname,
+            phoneNumber, linkedIn, brokerageORcompany, titleORrole } = req.body;
 
-    // Check if the username already exists
-    db.query('SELECT * FROM users WHERE username = ?', [username], (err, results) => {
-        if (err) {
-            console.error('Error checking username:', err);
-            return res.status(500).json({ error: 'Internal server error' });
-        }
-        if (results.length > 0) {
-            return res.status(400).json({ error: 'Username already exists' });
-        }
-    });
-        
-    // ----- validations ----- //
-    // -- email validation -- //
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!username || !password || !email || !firstname || !lastname) {
+        return res.status(400).json({ error: 'Missing required fields' });
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         return res.status(400).json({ error: 'Invalid email format' });
     }
-    // check if email is exists
-    db.query(`SELECT * FROM users WHERE email = ?`, [email], (err, results) => {
-        if (err) {
-            console.error('Error checking email:', err);
-            return res.status(500).json({ error: 'Internal server error' });
-        }
-        if (results.length > 0) {
-            return res.status(400).json({ error: 'Email already exists' });
-        }
-    });
-
-    // -- linkedIn validation -- //
-    const linkedInRegex = /^(https?:\/\/)?(www\.)?linkedin\.com\/.*$/;
-    if (linkedIn && !linkedInRegex.test(linkedIn)) {
+    if (linkedIn && !/^(https?:\/\/)?(www\.)?linkedin\.com\/.*$/.test(linkedIn)) {
         return res.status(400).json({ error: 'Invalid LinkedIn URL' });
     }
-
-    // -- phone number validation -- //
-    const phoneNumberRegex = /^\+?[1-9]\d{1,14}$/;
-    if (phoneNumber && !phoneNumberRegex.test(phoneNumber)) {
+    if (phoneNumber && !/^\+?[1-9]\d{1,14}$/.test(phoneNumber)) {
         return res.status(400).json({ error: 'Invalid phone number format' });
     }
-
-    // -- password strength validation -- //
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-    if (!passwordRegex.test(password)) {
-        return res.status(400).json({ error: 'Password must be at least 8 characters long and include uppercase, lowercase, number, and special character' });
+    if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(password)) {
+        return res.status(400).json({ error: 'Password must be at least 8 characters and include uppercase, lowercase, number, and special character (@$!%*?&)' });
     }
 
-    // If all validations pass, insert the new user into the database
-    // Insert the new user
-    db.query('INSERT INTO users (publicID, username, password, email, firstname, lastname, phoneNumber, linkedIn, brokerageORcompany, titleORrole) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [nanoid(), username, password, email, firstname, lastname, phoneNumber, linkedIn, brokerageORcompany, titleORrole], (err, results) => {
-        if (err) {
-            console.error('Error creating user:', err);
-            return res.status(500).json({ error: 'Internal server error' });
+    try {
+        const hash = await bcrypt.hash(password, 10);
+        console.log('flag: start query');
+        const [result] = await db.promise().query(
+            `INSERT INTO users (publicID, username, password, email, firstname, lastname,
+                                phoneNumber, linkedIN, brokerageORcompany, titleORrole)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [nanoid(), username, hash, email, firstname, lastname,
+             phoneNumber || 9999999999, linkedIn || '', brokerageORcompany || '', titleORrole || '']
+        );
+        const token = jwt.sign({ userID: result.insertId }, process.env.JWT_SECRET, { expiresIn: '24h' });
+        console.log('flag: user created successfully');
+        res.status(201).json({ message: 'User created successfully', token });
+    } catch (err) {
+        if (err.code === 'ER_DUP_ENTRY') {
+            return res.status(409).json({ error: 'Username, email, phone number, or LinkedIn is already in use' });
         }
-        res.status(201).json({ message: 'User created successfully' });
-    });
+        console.error('Error creating user:', err);
+        res.status(500).json({ error: 'Internal server error (registration)' });
+    }
 });
 
 // login
-app.post('/login', (req, res) => {
+app.post('/login', async (req, res) => {
     const { username, password } = req.body;
-
-    //
-    db.query('SELECT * FROM users WHERE username = ? AND password = ?', [username, password], (err, result) => {
-        if (err){
-            console.error('Error logging in: ', err);
-            return res.status(500).json({ error: 'Internal server error'});
+    try {
+        const [rows] = await db.promise().query('SELECT * FROM users WHERE username = ?', [username]);
+        if (!rows.length || !(await bcrypt.compare(password, rows[0].password))) {
+            return res.status(401).json({ error: 'Invalid credentials' });
         }
-        if (result.length > 0){ // successfully logged in
-            
-            // create JWT token for user
-            const user = result[0];
-            const token = jwt.sign({ userID: user.privateID }, process.env.JWT_SECRET, { expiresIn: '24h' });
-            res.json({ token });
-        } else {
-            res.status(401).json({ error: 'Invalid credentials' });
-        }
-    })
-})
+        const token = jwt.sign({ userID: rows[0].privateID }, process.env.JWT_SECRET, { expiresIn: '24h' });
+        res.json({ token });
+    } catch (err) {
+        console.error('Error logging in:', err);
+        res.status(500).json({ error: 'Internal server error, (login)' });
+    }
+});
 
 // token and authentication
 const authenticateToken = (req, res, next) => {
@@ -221,7 +199,7 @@ app.post('/transactions', authenticateToken, (req, res) => {
     db.query('SELECT * FROM transactions WHERE userID = ?', [userJWT], (err, results) => {
         if (err) {
             console.error('Error fetching transactions:', err);
-            return res.status(500).json({ error: 'Internal server error' });
+            return res.status(500).json({ error: 'Internal server error (transactions page)' });
         }
         res.json(results);
     });
@@ -238,7 +216,7 @@ app.post('/dashboard', authenticateToken, (req, res) => {
     db.query('SELECT * FROM transactions WHERE userID = ?', [userJWT], (err, results) => {
         if (err) {
             console.error('Error fetching dashboard data:', err);
-            return res.status(500).json({ error: 'Internal server error' });
+            return res.status(500).json({ error: 'Internal server error (dashboard)' });
         }
         res.json(results);
     });
@@ -315,7 +293,7 @@ app.post('/newDeal', authenticateToken, (req, res) => {
         [userJWT, newFileID, side, propertyType, transactionType, stage, MLSNumber, buyerName, sellerName, listingAgent, assignedTo, contractDate, closingDate, closingTime, EMDdueDate, inspectionDeadline, appraisalDeadline, financingContingencyDeadline, address, closingLocation, purchasePrice, listingPrice, EMDamount, titleCompanyName, titleCompanyContact, lenderName, lenderContact, riskLevel, nextAction, nextActionDue, blocker, notes, earnestMoneyReceived ? 1 : 0, inspectionComplete ? 1 : 0, appraisalReceived ? 1 : 0, titleClear ? 1 : 0, insuranceConfirmed ? 1 : 0, clearToCloseConfirmed ? 1 : 0], (err) => {
             if (err) {
                 console.error('Error creating new deal:', err);
-                return res.status(500).json({ error: 'Internal server error' });
+                return res.status(500).json({ error: 'Internal server error (new Deal)' });
             }
             res.status(201).json({ message: 'New deal created successfully', fileID: newFileID });
         });
@@ -332,7 +310,7 @@ app.post('/settings', authenticateToken, (req, res) => {
         [email, username, password, linkedIN, phoneNumber, brokerageORcompany, titleORrole, userJWT], (err, results) => {
             if (err) {
                 console.error('Error updating user settings:', err);
-                return res.status(500).json({ error: 'Internal server error' });
+                return res.status(500).json({ error: 'Internal server error (settings)' });
             }
             res.json({ message: 'User settings updated successfully' });
         });

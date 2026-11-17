@@ -6,6 +6,7 @@ import NewDeal from './pages/newDeal';
 import Transactions from './pages/transactions';
 // import Analyzer from './pages/analyzer.jsx';
 // import Sales from './pages/sales.jsx';
+import Registration from './pages/registration';
 import Settings from './pages/settings';
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
         <Route path="/transactions" element={<Transactions />} />
         {/* <Route path="/analyzer" element={<Analyzer />} /> */}
         {/* <Route path="/sales" element={<Sales />} /> */}
+        <Route path="/register" element={<Registration />} />
         <Route path="/settings" element={<Settings />} />
       </Routes>
     </Router>

@@ -3,13 +3,16 @@ import "./styleSheets/style.css";
 import "./scripts/app.js";
 
 function Settings() {
+    // ======================== ATTRIBUTES ========================= //
 
+    // ======================== GRAB USER INFORMATION ========================= //
     // fetch current user information
     // useEffect(() => {
     //     fetch()
     //         .then()
     // }, []);
     
+    // ======================== SETTINGS UI ========================= //
     return (
         <>
         <div id="app">

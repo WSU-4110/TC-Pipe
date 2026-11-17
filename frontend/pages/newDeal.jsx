@@ -1,10 +1,15 @@
 import {useState} from 'react';
+import { useNavigate } from 'react-router-dom';
 import "./styleSheets/style.css";
 import "./scripts/app.js";
 
 
 function NewDeal() {
+    // ======================== ATTRIBUTES ========================= //
+    // navigation hook
+    const navigate = useNavigate();
 
+    // useStates
     const [formData, setFormData] = useState({
         fileID: '',
         address: '',
@@ -14,6 +19,7 @@ function NewDeal() {
         riskLevel: 'Low'
     });
 
+    // ======================== HANDLE FORM CHANGES ========================= //
     // when field or input changes update the corresponding value in formData state
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -23,6 +29,7 @@ function NewDeal() {
         }));
     }
 
+    // add new transaction to the database when form is submitted
     const handleSubmit = (e) => {
         e.preventDefault();
 
@@ -31,6 +38,7 @@ function NewDeal() {
         // enter the fetch and post request to the backend here to send the formData to the SQL database
     }
 
+    // ======================== NEW DEAL UI ========================= //
     return (
         <>
             <div id="app">
