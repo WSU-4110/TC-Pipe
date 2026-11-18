@@ -129,10 +129,10 @@ td, th{
     white-space: nowrap; /*prevents text from wrapping inside cells which keeps rows clean*/
 }
 
-/* Risk Flag Colors (used in transaction tables) */
-.risk-high { color: #DC2626; font-weight: 700; } /*red — closing soon with incomplete milestones*/
-.risk-medium { color: #D97706; font-weight: 700; } /*amber — worth monitoring*/
-.risk-low { color: #16A34A; font-weight: 700; } /*green — on track*/
+/* Risk text colors match the dashboard. */
+.risk-high { color: #B91C1C; font-weight: 700; }
+.risk-medium { color: #B45309; font-weight: 700; }
+.risk-low { color: #15803D; font-weight: 700; }
 
 /* Forms (Add Deal / Settings / Analyzer) */
 fieldset {

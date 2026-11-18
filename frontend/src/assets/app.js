@@ -44,7 +44,7 @@ function saveSettings(e) {
 }
 
 
-// Transaction API (async talks to PHP backend now)
+// Transaction API (async talks to AWS backend)
 
 async function getTransactions() {
     const response = await fetch(`${API_BASE}/api/transactions`);
@@ -52,7 +52,7 @@ async function getTransactions() {
     return data;
 }
 // async marks the function as asynchronous... it can use await inside
-// fetch() sends a GET request to our php api
+// fetch() sends a GET request to our API
 // await pauses here until the server responds before continuing
 // response.json() parses the JSON string back into a JS array
 
@@ -60,13 +60,13 @@ async function apiPost(transaction) {
     // sends a new transaction to the server (INSERT)
     const response = await fetch(`${API_BASE}/api/transactions`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }, // tells PHP to expect JSON in the request body
-        body: JSON.stringify(transaction) // converts the JS object into a JSON string PHP can read
+        headers: { 'Content-Type': 'application/json' }, // tells server to expect JSON in the request body
+        body: JSON.stringify(transaction) // converts the JS object into a JSON string
     });
     return await response.json();
 }
-// method: 'POST' tells PHP this is an insert operation
-// body: JSON.stringify() converts the JS object into a JSON string for PHP to read
+// method: 'POST' tells server this is an insert operation
+// body: JSON.stringify() converts the JS object into a JSON string
 
 async function apiPut(transaction) {
     // sends an updated transaction to the server (UPDATE)
@@ -86,7 +86,6 @@ async function apiDelete(fileID) {
     return await response.json();
 }
 // fileID is passed in the URL as a query parameter
-// PHP reads it with $_GET['fileID']
 
 
 // Utility functions (synchronous so no server needed)
@@ -133,28 +132,39 @@ async function renderTransactions(filter = '') {
     let transactions = await getTransactions();
     // await here waits for the API response before trying to display anything
 
-    // apply search filter
-    if (filter) {
-        filter = filter.toLowerCase();
-        transactions = transactions.filter(t =>
-            t.fileID.toLowerCase().includes(filter) ||
-            t.propertyAddress.toLowerCase().includes(filter)
-        );
-        // .filter() returns a new array with only the matching deals
-    }
-
-    // apply stage filter
+    // Apply Strategy Design Pattern (safely checks if filter DOM elements exist first)
     const stageFilter = document.getElementById('stageFilter');
-    if (stageFilter && stageFilter.value) {
-        transactions = transactions.filter(t => t.stage === stageFilter.value);
-    }
-
-    // apply risk filter
     const riskFilter = document.getElementById('riskFilter');
-    if (riskFilter && riskFilter.value) {
-        transactions = transactions.filter(t =>
-            (t.riskLevel || autoRisk(t)).toLowerCase() === riskFilter.value
-        );
+
+    if (typeof TransactionFilter !== 'undefined') {
+        const transactionFilter = new TransactionFilter([
+            new SearchFilterStrategy(),
+            new StageFilterStrategy(),
+            new RiskFilterStrategy()
+        ]);
+
+        transactions = transactionFilter.applyFilters(transactions, {
+            searchQuery: filter,
+            stageFilter: stageFilter ? stageFilter.value : '',
+            riskFilter: riskFilter ? riskFilter.value : ''
+        });
+    } else {
+        // Fallback filtering if Strategy classes aren't loaded globally yet
+        if (filter) {
+            const lowerFilter = filter.toLowerCase();
+            transactions = transactions.filter(t =>
+                (t.fileID && t.fileID.toLowerCase().includes(lowerFilter)) ||
+                (t.propertyAddress && t.propertyAddress.toLowerCase().includes(lowerFilter))
+            );
+        }
+        if (stageFilter && stageFilter.value) {
+            transactions = transactions.filter(t => t.stage === stageFilter.value);
+        }
+        if (riskFilter && riskFilter.value) {
+            transactions = transactions.filter(t =>
+                (t.riskLevel || autoRisk(t)).toLowerCase() === riskFilter.value.toLowerCase()
+            );
+        }
     }
 
     if (transactions.length === 0) {
@@ -165,7 +175,9 @@ async function renderTransactions(filter = '') {
     tbody.innerHTML = transactions.map(t => {
         const days = daysToClose(t.closingDate);
         const risk = t.riskLevel || autoRisk(t); // uses manual risk if set, otherwise auto-calculates
-        const riskClass = risk === 'High' ? 'risk-high' : risk === 'Medium' ? 'risk-medium' : 'risk-low';
+        const normalizedRisk = String(risk).trim().toLowerCase();
+        const riskLabel = normalizedRisk.charAt(0).toUpperCase() + normalizedRisk.slice(1);
+        const riskClass = normalizedRisk === 'high' ? 'risk-high' : normalizedRisk === 'medium' ? 'risk-medium' : 'risk-low';
         return `
             <tr>
                 <td>${t.fileID}</td>
@@ -173,7 +185,7 @@ async function renderTransactions(filter = '') {
                 <td>${t.stage || '—'}</td>
                 <td>${t.closingDate || '—'}</td>
                 <td>${days}</td>
-                <td class="${riskClass}">${risk}</td>
+                <td class="${riskClass}">${riskLabel}</td>
                 <td>
                     <a href="#">View</a> |
                     <a href="add.html?fileID=${t.fileID}">Edit</a> |
@@ -247,7 +259,9 @@ async function renderDashboard() {
     tbody.innerHTML = active.map(t => {
         const days = daysToClose(t.closingDate);
         const risk = t.riskLevel || autoRisk(t);
-        const riskClass = risk === 'High' ? 'risk-high' : risk === 'Medium' ? 'risk-medium' : 'risk-low';
+        const normalizedRisk = String(risk).trim().toLowerCase();
+        const riskLabel = normalizedRisk.charAt(0).toUpperCase() + normalizedRisk.slice(1);
+        const riskClass = normalizedRisk === 'high' ? 'risk-high' : normalizedRisk === 'medium' ? 'risk-medium' : 'risk-low';
         return `
             <tr>
                 <td>${t.fileID}</td>
@@ -255,7 +269,7 @@ async function renderDashboard() {
                 <td>${t.stage || '—'}</td>
                 <td>${t.closingDate || '—'}</td>
                 <td>${days}</td>
-                <td class="${riskClass}">${risk}</td>
+                <td class="${riskClass}">${riskLabel}</td>
                 <td><a href="transactions.html">View</a></td>
             </tr>
         `;
@@ -296,7 +310,7 @@ async function renderDashboard() {
 }
 
 
-// CRUD operations (now async! talk to PHP API.)
+// CRUD operations (now async! talk to AWS API.)
 
 async function deleteTransaction(fileID) {
     if (!confirm('Are you sure you want to delete ' + fileID + '?')) return;
@@ -581,3 +595,21 @@ function openInOutlook() {
     const body = encodeURIComponent(document.getElementById('emailBody').value);
     window.open('https://outlook.live.com/mail/0/deeplink/compose?subject=' + subject + '&body=' + body);
 }
+// Hook up event listeners so filters actually trigger a re-render when changed
+document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('searchInput'); // Update ID if yours is different
+    const stageFilter = document.getElementById('stageFilter');
+    const riskFilter = document.getElementById('riskFilter');
+
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => renderTransactions(e.target.value));
+    }
+
+    if (stageFilter) {
+        stageFilter.addEventListener('change', () => renderTransactions());
+    }
+
+    if (riskFilter) {
+        riskFilter.addEventListener('change', () => renderTransactions());
+    }
+});

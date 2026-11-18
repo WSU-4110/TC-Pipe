@@ -1,0 +1,66 @@
+import { useState } from 'react'   
+import { useNavigate } from 'react-router-dom'
+import "./styleSheets/loginStyle.css"
+
+function Login(event){
+    const navigate = useNavigate();
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
+    const [message, setMessage] = useState('');
+    const [messageClass, setMessageClass] = useState('');
+
+    function onLoginSubmit(event) {
+        event.preventDefault(); // Prevent the default form submission behavior
+
+        const usernameInput = document.getElementById('username').value;
+        const passwordInput = document.getElementById('password').value;
+        const messageDiv = document.getElementById('message');
+
+        if (usernameInput === "admin" && passwordInput === "admin") {
+            setMessage("Login successful! Welcome back.");
+            setMessageClass("success");
+            setTimeout(() => {
+                navigate('/dashboard'); // Redirect to the dashboard page
+            }, 1000); // Redirect after 1 second
+        } else {
+            setMessage("Invalid username or password.");
+            setMessageClass("error");
+        }
+    }
+
+    return(
+        <>
+            <title>Login Demo</title>
+            <div class="login-container">
+            <h2>Login Demo</h2>
+            <form id="loginForm" onSubmit={onLoginSubmit}>
+                <div class="input-group">
+                    <label for="username">Username</label>
+                    <input 
+                        type="text" 
+                        id="username" 
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        required
+                    />
+                </div>
+                <div class="input-group">
+                    <label for="password">Password</label>
+                    <input 
+                        type="password" 
+                        id="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+
+                    />
+                </div>
+                <button type="submit">Sign In</button>
+            </form>
+            <div id="message"></div>
+            </div>
+        </>
+    );
+}
+
+export default Login
