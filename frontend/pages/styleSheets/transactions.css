@@ -46,8 +46,54 @@
 .tx-page #emailComposer textarea { min-height: 300px; resize: vertical; }
 .tx-page #emailComposer .composer-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; }
 
+/* View Transaction Panel */
+.tx-page #viewTransaction { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-top: 24px; }
+.tx-page #viewTransaction h2 { font-size: 17px; font-weight: 600; margin: 0 0 20px; }
+/* one box per section (copied from the .nd-page fieldset rules in newDeal.css) */
+.tx-page #viewTransaction fieldset { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin: 0 0 16px; }
+.tx-page #viewTransaction legend { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); padding: 0 8px; margin-left: -4px; }
+/* responsive grid: as many 220px-wide columns as fit */
+.tx-page #viewTransaction .field-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; margin-top: 8px; }
+.tx-page #viewTransaction .field { display: flex; flex-direction: column; gap: 4px; }
+.tx-page #viewTransaction .field.full { grid-column: 1 / -1; } /* Notes spans the whole row */
+.tx-page #viewTransaction .field-label { font-size: 11.5px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.tx-page #viewTransaction .field-value { font-size: 14px; color: var(--text); white-space: pre-wrap; }
+
+/* Edit Transaction Panel */
+.tx-page #editTransaction { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-top: 24px; }
+.tx-page #editTransaction h2 { font-size: 17px; font-weight: 600; margin: 0 0 20px; }
+/* one box per section (copied from the .nd-page fieldset rules in newDeal.css) */
+.tx-page #editTransaction fieldset { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin: 0 0 16px; }
+.tx-page #editTransaction legend { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); padding: 0 8px; margin-left: -4px; }
+/* responsive grid: as many 220px-wide columns as fit */
+.tx-page #editTransaction .field-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; margin-top: 8px; }
+.tx-page #editTransaction .field { display: flex; flex-direction: column; gap: 4px; }
+.tx-page #editTransaction .field.full { grid-column: 1 / -1; } /* Notes spans the whole row */
+.tx-page #editTransaction .field-label { font-size: 11.5px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.tx-page #editTransaction .field-value { font-size: 14px; color: var(--text); white-space: pre-wrap; }
+/* the edit form uses real <label>s and inputs (same look as New Deal) */
+.tx-page #editTransaction .field label { font-size: 11.5px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.tx-page #editTransaction .field input,
+.tx-page #editTransaction .field select,
+.tx-page #editTransaction .field textarea { width: 100%; background: var(--surface); } /* darker than the section box so you can see them */
+.tx-page #editTransaction .field textarea { min-height: 100px; resize: vertical; }
+.tx-page #editTransaction .field input[readonly] { opacity: .6; cursor: not-allowed; } /* File ID */
+/* milestone checkboxes: a clickable box with the checkbox and its text side by side */
+.tx-page #editTransaction .milestone-item {
+    flex-direction: row; align-items: center; gap: 10px;
+    padding: 10px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    cursor: pointer; text-align: left;
+}
+.tx-page #editTransaction .milestone-item:hover { border-color: var(--border2); }
+.tx-page #editTransaction .milestone-item input[type="checkbox"] { width: 16px; height: 16px; padding: 0; accent-color: var(--accent); cursor: pointer; flex-shrink: 0; }
+.tx-page #editTransaction .milestone-item span { font-size: 13.5px; font-weight: 500; color: var(--text); text-transform: none; letter-spacing: 0; }
+.tx-page #editTransaction .composer-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 20px; }
+.tx-page #editTransaction .composer-actions .btn { margin-top: 0; } /* style.css adds margin-top to every submit button */
+.tx-page #viewTransaction .composer-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; }
+
 /* links in table cells + empty row */
 .tx-page td a { color: var(--accent); font-weight: 600; cursor: pointer; }
 .tx-page td a:hover { text-decoration: underline; }
+.tx-page td a.delete-link { color: #fca5a5; } /* red, since it can't be undone */
 .tx-page tr.selected td { background: var(--surface2); }
 .tx-page .empty-row td { color: var(--muted); font-size: 13.5px; padding: 20px 16px; text-align: center; }

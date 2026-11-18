@@ -188,6 +188,24 @@ const authenticateToken = (req, res, next) => {
     });
 };
 
+// ===== TRANSACTION FIELDS (shared by /newDeal and the edit route) ===== ///
+// Only these columns may be filled in from a form (whitelist).
+// fileID and userID are NOT here: the server decides those.
+const allowedFields = [
+    'side', 'propertyType', 'transactionType', 'stage', 'MLSNumber',
+    'buyerName', 'sellerName', 'listingAgent', 'assignedTo',
+    'contractDate', 'closingDate', 'closingTime', 'EMDdueDate', 'inspectionDeadline',
+    'appraisalDeadline', 'financingContingencyDeadline',
+    'address', 'closingLocation',
+    'purchasePrice', 'listingPrice', 'EMDamount',
+    'titleCompanyName', 'titleCompanyContact', 'lenderName', 'lenderContact',
+    'riskLevel', 'nextAction', 'nextActionDue', 'blocker', 'notes'
+];
+const milestoneFields = [
+    'earnestMoneyReceived', 'inspectionComplete', 'appraisalReceived',
+    'titleClear', 'insuranceConfirmed', 'clearToCloseConfirmed'
+];
+
 // ===== USER TRANSACTION PAGE ===== ///
 app.post('/transactions', authenticateToken, (req, res) => {
     const userJWT = req.user.userID;
@@ -215,9 +233,60 @@ app.get('/transactions', authenticateToken, (req, res) => {
     });
 });
 
-// TODO: create get and post method for edit transaction button
-// TODO: create get method for view transaction button
-// TODO: create post method for delete transaction button
+// ----- Edit transaction ----- //
+// Updates one existing deal. Only the fields that are sent get changed.
+app.put('/transactions/:fileID', authenticateToken, async (req, res) => {
+    const changes = {};
+    for (const field of allowedFields) {
+        if (field in req.body) changes[field] = req.body[field] === '' ? null : req.body[field];
+    }
+    for (const field of milestoneFields) {
+        if (field in req.body) changes[field] = req.body[field] ? 1 : 0;
+    }
+    if (!Object.keys(changes).length) {
+        return res.status(400).json({ error: 'Nothing to update' });
+    }
+
+    try {
+        // "AND userID = ?" means you can only edit YOUR deals, even if someone guesses a fileID
+        const [result] = await db.promise().query(
+            'UPDATE transactions SET ? WHERE fileID = ? AND userID = ?',
+            [changes, req.params.fileID, req.user.userID]
+        );
+        if (!result.affectedRows) {
+            return res.status(404).json({ error: 'Deal not found' });
+        }
+
+        // send back the saved row so the page can show it right away
+        const [rows] = await db.promise().query(
+            'SELECT * FROM transactions WHERE fileID = ? AND userID = ?',
+            [req.params.fileID, req.user.userID]
+        );
+        res.json(rows[0]);
+    } catch (err) {
+        console.error('Error updating deal:', err);
+        res.status(500).json({ error: 'Internal server error (edit deal)' });
+    }
+});
+
+// (View doesn't need its own route: GET /transactions already sends every field.)
+// ----- Delete transaction ----- //
+// Removes one deal. Like edit, "AND userID = ?" means you can only delete YOUR deals.
+app.delete('/transactions/:fileID', authenticateToken, async (req, res) => {
+    try {
+        const [result] = await db.promise().query(
+            'DELETE FROM transactions WHERE fileID = ? AND userID = ?',
+            [req.params.fileID, req.user.userID]
+        );
+        if (!result.affectedRows) {
+            return res.status(404).json({ error: 'Deal not found' });
+        }
+        res.json({ message: 'Deal deleted', fileID: req.params.fileID });
+    } catch (err) {
+        console.error('Error deleting deal:', err);
+        res.status(500).json({ error: 'Internal server error (delete deal)' });
+    }
+});
 
 
 // ===== DASHBOARD PAGE ===== ///
@@ -245,22 +314,6 @@ app.post('/newDeal', authenticateToken, async (req, res) => {
         const datePrefix = new Date().toISOString().slice(2, 10).replace(/-/g, '_');
         return `${datePrefix}-TC-${generateFileIDKey()}`;
     };
-
-    // Only these columns may be filled in from the form (whitelist)
-    const allowedFields = [
-        'side', 'propertyType', 'transactionType', 'stage', 'MLSNumber',
-        'buyerName', 'sellerName', 'listingAgent', 'assignedTo',
-        'contractDate', 'closingDate', 'closingTime', 'EMDdueDate', 'inspectionDeadline',
-        'appraisalDeadline', 'financingContingencyDeadline',
-        'address', 'closingLocation',
-        'purchasePrice', 'listingPrice', 'EMDamount',
-        'titleCompanyName', 'titleCompanyContact', 'lenderName', 'lenderContact',
-        'riskLevel', 'nextAction', 'nextActionDue', 'blocker', 'notes'
-    ];
-    const milestoneFields = [
-        'earnestMoneyReceived', 'inspectionComplete', 'appraisalReceived',
-        'titleClear', 'insuranceConfirmed', 'clearToCloseConfirmed'
-    ];
 
     // Build { columnName: value } for the INSERT; empty strings become NULL
     // (MySQL rejects '' for DATE / DECIMAL columns)

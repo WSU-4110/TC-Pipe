@@ -1,4 +1,4 @@
-/* layout */
+/* ==================== LAYOUT ==================== */
 body{
     font-family: Arial, sans-serif;
     background-color: #F7F9FC; /*off-white background*/
@@ -11,7 +11,8 @@ body{
     display: flex; /*tells browser to stack sidebar and main content horizontally instead of vertically*/
 }
 
-/* Sidebar */
+
+/* ==================== SIDEBAR ==================== */
 #sidebar {
     width: 220px; /*fixed width so it never shrinks regardless of screen size*/
     background-color: #1B2A3B; /*deep navy which gives the app a professional dashboard feel*/
@@ -38,13 +39,15 @@ body{
     background-color: rgba(255, 255, 255, 0.1); /*10% white overlay on hover so it has a subtle highlight effect*/
 }
 
-/* Main Content Area */
+
+/* ==================== MAIN CONTENT AREA ==================== */
 #main {
     padding: 32px;
     flex: 1; /*fills whatever space is left after sidebar takes its 220px*/
 }
 
-/* Dashboard Stat Cards */
+
+/* ==================== DASHBOARD STAT CARDS ==================== */
 #stats{
     display: flex; /*lines up the three stat cards side by side*/
     gap:20px; /*space between each card*/
@@ -72,7 +75,8 @@ body{
     margin: 0;
 }
 
-/* Filter Bar (Transactions Page) */
+
+/* ==================== FILTER BAR (TRANSACTIONS PAGE) ==================== */
 #filters {
     display: flex; /*lines search input and dropdowns side by side*/
     gap: 12px;
@@ -99,7 +103,8 @@ body{
     flex: 1; /*search bar stretches to fill remaining space while dropdowns stay compact*/
 }
 
-/* Tables */
+
+/* ==================== TABLES ==================== */
 table {
     width: 100%; /*stretches to fill the content area*/
     border-collapse: collapse; /*merges double borders into single clean lines*/
@@ -129,7 +134,14 @@ td, th{
     white-space: nowrap; /*prevents text from wrapping inside cells which keeps rows clean*/
 }
 
-/* Risk Flag Colors (used in transaction tables) */
+.tableLinks{
+    display: inline-block;
+    padding-left: 5px;
+    padding-right: 5px
+}
+
+
+/* ==================== RISK FLAG COLORS (TRANSACTIONS PAGE) ==================== */
 .risk-high { color: #DC2626; font-weight: 700; } /*red — closing soon with incomplete milestones*/
 .risk-medium { color: #D97706; font-weight: 700; } /*amber — worth monitoring*/
 .risk-low { color: #16A34A; font-weight: 700; } /*green — on track*/
@@ -191,7 +203,8 @@ textarea {
     resize: vertical; /*user can drag textarea taller but not wider*/
 }
 
-/* Milestone Checkboxes */
+
+/* ==================== MILESTONE CHECKBOXES ==================== */
 .milestone-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr); /*three checkboxes per row*/
@@ -206,7 +219,8 @@ textarea {
     text-align: center;
 }
 
-/* Buttons  */
+
+/* ==================== BUTTONS ==================== */
 button[type="submit"] {
     background-color: #2563EB;
     color: #ffffff;
@@ -223,7 +237,8 @@ button[type="submit"]:hover {
     background-color: #1d4ed8; /*slightly darker blue on hover for feedback*/
 }
 
-/* Deal Analyzer Results Grid */
+
+/* ==================== DEAL ANALYZER RESULTS GRID ==================== */
 #results-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr); /*four result cards side by side: GRM, Gross Yield, Cap Rate, CoC*/
@@ -231,4 +246,10 @@ button[type="submit"]:hover {
     margin-top: 16px;
 }
 
+
+/* ==================== SCROLL BAR ==================== */
+/* .scrollable{
+    overflow-y: scroll; 
+    border: 1px solid #ccc;
+} */
         
