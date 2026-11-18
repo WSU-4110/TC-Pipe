@@ -112,10 +112,6 @@ createDatabaseIfNotExists();
 console.log({ PORT, HOST, USER, PORT, API_PORT, hasJWT: !!process.env.JWT_SECRET });
 // ===== USER REGISTRATION / USER LOGIN ===== ///
 // registration
-// TODO: Validate user email NEED
-// TODO: Validate linkedIn URL NEED
-// TODO: Validate user phone number NEED
-// TODO: Validate user password strength WANT
 app.post('/register', async (req, res) => {
     const { username, password, email, firstname, lastname,
             phoneNumber, linkedIn, brokerageORcompany, titleORrole } = req.body;
@@ -309,3 +305,4 @@ app.post('/settings', authenticateToken, (req, res) => {
 app.listen(PORT, () => { 
     console.log(`Server is running on port ${PORT}`);
 });
+

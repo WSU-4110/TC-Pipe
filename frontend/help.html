@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Pipeline Tracker | Help</title>
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Help-page-only styles. Layout, sidebar, fields and buttons still come from style.css. -->
+    <style>
+        :root {
+            --blue: #2563EB;
+            --ink: #1E293B;
+            --muted: #64748B;
+            --line: #E2E8F0;
+            --red: #DC2626;
+            --green: #16A34A;
+        }
+
+        #sidebar { flex-shrink: 0; }
+        #main { min-width: 0; }
+        #sidebar a[aria-current="page"] { background-color: rgba(255, 255, 255, 0.12); font-weight: 700; }
+
+        .page-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
+        .page-head h1 { margin: 0 0 6px 0; }
+        .lede { margin: 0; font-size: 15px; color: var(--muted); max-width: 640px; }
+        .btn { background: #fff; border: 1px solid var(--line); border-radius: 6px; padding: 10px 16px; font-size: 14px; font-weight: 600; color: var(--ink); cursor: pointer; }
+        .btn:hover { border-color: var(--blue); color: var(--blue); }
+        .btn-primary { background: var(--blue); border: 1px solid var(--blue); color: #fff; border-radius: 6px; padding: 10px 18px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .btn-primary:hover { background: #1d4ed8; }
+
+        .panel { background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); padding: 20px 24px; margin-bottom: 24px; max-width: 900px; }
+        .panel h2 { margin: 0 0 4px 0; font-size: 18px; }
+        .panel .sub { margin: 0 0 16px 0; font-size: 13px; color: var(--muted); }
+
+        .cta { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; border-left: 4px solid var(--blue); }
+        .cta h2 { margin-bottom: 2px; }
+        .cta p { margin: 0; font-size: 14px; color: var(--muted); }
+
+        /* guides + FAQ accordions */
+        details.topic { border-top: 1px solid var(--line); }
+        details.topic:first-of-type { border-top: 0; }
+        details.topic summary { cursor: pointer; padding: 14px 0; font-weight: 600; font-size: 15px; color: var(--ink); }
+        details.topic summary:hover { color: var(--blue); }
+        details.topic .body { padding: 0 0 16px 0; font-size: 14px; line-height: 1.6; color: var(--ink); }
+        details.topic .body p { margin: 0 0 10px 0; }
+        details.topic .body ol, details.topic .body ul { margin: 0 0 10px 0; padding-left: 22px; }
+        details.topic .body li { margin-bottom: 4px; }
+        .note { background: #F1F5F9; border-radius: 6px; padding: 10px 12px; font-size: 13px; color: #475569; }
+
+        /* bug form */
+        .req { color: var(--red); }
+        .field { margin-bottom: 18px; }
+        .field small { color: var(--muted); font-size: 12px; }
+        .field [aria-invalid="true"] { border-color: var(--red); background: #FEF2F2; }
+        .counter { align-self: flex-end; font-size: 12px; color: var(--muted); }
+        .counter.near { color: #B45309; font-weight: 700; }
+        .form-error { background: #FEE2E2; border: 1px solid #FCA5A5; color: #7F1D1D; border-radius: 8px; padding: 12px 16px; margin-bottom: 18px; font-size: 14px; }
+        .form-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+        .form-actions button[type="submit"] { margin-top: 0; }
+        .form-actions button[type="submit"]:disabled { opacity: 0.6; cursor: default; }
+
+        /* confirmation */
+        .done { text-align: center; padding: 32px 24px; }
+        .done .check { width: 48px; height: 48px; border-radius: 50%; background: #DCFCE7; color: var(--green); font-size: 28px; line-height: 48px; margin: 0 auto 12px; }
+        .done .ref { display: inline-block; margin: 10px 0 14px; padding: 8px 16px; background: #F1F5F9; border-radius: 6px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 18px; font-weight: 700; letter-spacing: 0.03em; }
+        .done p { margin: 0 0 8px 0; font-size: 14px; color: var(--ink); }
+        .done .form-actions { justify-content: center; margin-top: 18px; }
+
+        .demo-note { background: #FEF3C7; border: 1px solid #FCD34D; color: #78350F; border-radius: 8px; padding: 10px 14px; margin-bottom: 18px; font-size: 13px; }
+
+        .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    </style>
+</head>
+<body>
+<div id="app">
+    <nav id="sidebar" aria-label="Main">
+        <a href="index.html" id="brand">TC Pipeline</a>
+        <a href="index.html">Dashboard</a>
+        <a href="add.html">New Deal</a>
+        <a href="transactions.html">Transactions</a>
+        <a href="analyzer.html">Analyzer</a>
+        <a href="settings.html">Settings</a>
+        <a href="help.html" aria-current="page">Help</a>
+    </nav>
+
+    <main id="main">
+        <div class="page-head">
+            <div>
+                <h1>Help</h1>
+                <p class="lede">Guides and answers for using TC Pipeline. If you can&rsquo;t find what you need, you can report a bug.</p>
+            </div>
+            <button type="button" class="btn" id="closeHelpBtn">Close Help</button>
+        </div>
+
+        <!-- VIEW 1: the Help page (guides, FAQ, "Report a Bug") -->
+        <div id="helpView">
+            <section class="panel cta" aria-label="Report a bug">
+                <div>
+                    <h2>Something not working?</h2>
+                    <p>Tell us what went wrong and we&rsquo;ll look into it.</p>
+                </div>
+                <button type="button" class="btn-primary" data-open-report>Report a Bug</button>
+            </section>
+
+            <section class="panel" aria-labelledby="guidesTitle">
+                <h2 id="guidesTitle">Help guides</h2>
+                <p class="sub">Step-by-step instructions for the main parts of the app.</p>
+
+                <details class="topic">
+                    <summary>Registering and logging in</summary>
+                    <div class="body">
+                        <!-- TODO: replace this text once registration and login are built. -->
+                        <p>Account registration and login aren&rsquo;t available yet. For now you can use TC Pipeline without signing in.</p>
+                        <p>Your profile details (name, email, brokerage) are saved in this browser only &mdash; see <strong>Profile settings</strong> below.</p>
+                        <p class="note">When accounts are added, this guide will explain how to register and sign in.</p>
+                    </div>
+                </details>
+
+                <details class="topic">
+                    <summary>The dashboard</summary>
+                    <div class="body">
+                        <p>The <a href="index.html">Dashboard</a> is your daily overview of every active deal.</p>
+                        <ul>
+                            <li><strong>Stat cards</strong> show deals closing in the next 7 days, overdue deadlines, high-risk deals, closings that have already passed, and your active deals.</li>
+                            <li><strong>Needs Attention</strong> lists overdue deadlines, deals whose closing date has passed, and anything marked as a blocker.</li>
+                            <li><strong>Upcoming Deadlines</strong> shows open deadlines in the next 30 days. A deadline disappears once its milestone is checked off.</li>
+                            <li><strong>Active Deals</strong> is the full table. Search by file ID, address or client, filter by risk, or change the sort order.</li>
+                        </ul>
+                        <p>Use <strong>Refresh</strong> to reload the latest data. Closed and terminated deals are hidden.</p>
+                    </div>
+                </details>
+
+                <details class="topic">
+                    <summary>Creating and editing transactions</summary>
+                    <div class="body">
+                        <p><strong>To create a transaction</strong></p>
+                        <ol>
+                            <li>Click <a href="add.html">New Deal</a> in the menu.</li>
+                            <li>Enter a File ID. It&rsquo;s required and must be unique.</li>
+                            <li>Fill in the property, people, dates, prices and milestones you know. Everything else can be left blank and added later.</li>
+                            <li>Click the save button at the bottom of the form.</li>
+                        </ol>
+                        <p><strong>To edit or delete one</strong></p>
+                        <ol>
+                            <li>Open <a href="transactions.html">Transactions</a> (or use <em>Edit</em> in the dashboard table).</li>
+                            <li>Click <em>Edit</em> on the deal, change what you need and save. The File ID can&rsquo;t be changed.</li>
+                            <li>To remove a deal, click <em>Delete</em> and confirm.</li>
+                        </ol>
+                        <p>Tick the milestone checkboxes as each step is completed. The dashboard uses them to work out risk and which deadlines are still open.</p>
+                    </div>
+                </details>
+
+                <details class="topic">
+                    <summary>Analyzing an investment property</summary>
+                    <div class="body">
+                        <ol>
+                            <li>Open <a href="analyzer.html">Analyzer</a> in the menu.</li>
+                            <li>Enter the purchase price, total cash invested and expected monthly rent.</li>
+                            <li>Enter the vacancy rate and management fee as percentages, and your yearly property taxes, insurance, maintenance, other expenses and mortgage payments.</li>
+                            <li>Click the analyze button.</li>
+                        </ol>
+                        <p>You&rsquo;ll see the gross rent multiplier (GRM), gross yield, cap rate and cash-on-cash return for the property.</p>
+                    </div>
+                </details>
+
+                <details class="topic">
+                    <summary>Profile settings</summary>
+                    <div class="body">
+                        <ol>
+                            <li>Open <a href="settings.html">Settings</a> in the menu.</li>
+                            <li>Enter your full name, email, phone, company or brokerage, title and LinkedIn address.</li>
+                            <li>Click save.</li>
+                        </ol>
+                        <p>Your first name is used in the dashboard greeting, and your details are added to the signature of emails you create from the Transactions page. They&rsquo;re stored in this browser only, so you&rsquo;ll need to enter them again on another device.</p>
+                    </div>
+                </details>
+            </section>
+
+            <section class="panel" aria-labelledby="faqTitle">
+                <h2 id="faqTitle">Frequently asked questions</h2>
+                <p class="sub">Quick answers to common questions.</p>
+
+                <details class="topic">
+                    <summary>Why is my deal marked High risk?</summary>
+                    <div class="body">
+                        <p>Hover over the risk label in the dashboard to see the reason. In general a deal is <strong>High</strong> when its closing date has passed, or it closes within 7 days with 2 or more open milestones. It&rsquo;s <strong>Medium</strong> when it closes within 14 days with an open milestone, has an overdue deadline, or has no closing date.</p>
+                        <p>If someone set a risk level by hand on the deal, that level is used instead and the label says <em>manual</em>.</p>
+                    </div>
+                </details>
+
+                <details class="topic">
+                    <summary>What counts as an overdue deadline?</summary>
+                    <div class="body">
+                        <p>A deadline (earnest money, inspection, appraisal or financing) is overdue when its date has passed and the matching milestone isn&rsquo;t checked off yet. Tick the milestone on the deal and the deadline clears.</p>
+                    </div>
+                </details>
+
+                <details class="topic">
+                    <summary>Why does the dashboard say &ldquo;Good evening, there&rdquo;?</summary>
+                    <div class="body">
+                        <p>No name is saved yet. Add your full name in <a href="settings.html">Settings</a> and the greeting will use your first name.</p>
+                    </div>
+                </details>
+
+                <details class="topic">
+                    <summary>What does &ldquo;Data to fix&rdquo; on the dashboard mean?</summary>
+                    <div class="body">
+                        <p>Some deals are missing information, such as a property address or closing date, or have a date that isn&rsquo;t valid. Open the deal with the <em>Edit</em> link in that list and fill in the missing details.</p>
+                    </div>
+                </details>
+
+                <details class="topic">
+                    <summary>Where is my information stored?</summary>
+                    <div class="body">
+                        <p>Transactions are stored on the TC Pipeline server. Your profile settings are stored in your own browser.</p>
+                    </div>
+                </details>
+
+                <details class="topic">
+                    <summary>Can I email my clients from TC Pipeline?</summary>
+                    <div class="body">
+                        <p>Yes. On <a href="transactions.html">Transactions</a>, click <em>Email</em> on a deal and choose a template. The subject and message are filled in from the deal. You can then copy the text or open it in Gmail or Outlook.</p>
+                    </div>
+                </details>
+
+                <details class="topic">
+                    <summary>I clicked Save and nothing happened</summary>
+                    <div class="body">
+                        <p>Refresh the page and check whether your change is there. If it isn&rsquo;t, the server may be unreachable. Try again in a minute, and if it keeps happening please report a bug so we can look into it.</p>
+                    </div>
+                </details>
+            </section>
+
+            <section class="panel cta" aria-label="Still need help">
+                <div>
+                    <h2>Still stuck?</h2>
+                    <p>If these guides didn&rsquo;t solve your problem, send us a bug report.</p>
+                </div>
+                <button type="button" class="btn-primary" data-open-report>Report a Bug</button>
+            </section>
+        </div>
+
+        <!-- VIEW 2: the bug report form -->
+        <div id="reportView" hidden>
+            <section class="panel" aria-labelledby="reportTitle">
+                <h2 id="reportTitle">Report a Bug</h2>
+                <p class="sub">Fields marked <span class="req">*</span> are required.</p>
+                <div id="demoNote" class="demo-note" hidden><strong>Demo mode:</strong> reports are not saved or emailed yet.</div>
+
+                <form id="bugForm" novalidate>
+                    <div id="formError" class="form-error" role="alert" hidden></div>
+
+                    <div class="field">
+                        <label for="category">Issue category <span class="req">*</span></label>
+                        <select id="category" name="category" required>
+                            <option value="">Select a category&hellip;</option>
+                            <option value="display">Something looks wrong on the page</option>
+                            <option value="data">Wrong numbers, dates or risk levels</option>
+                            <option value="save">Can&rsquo;t save, edit or delete a deal</option>
+                            <option value="email">Email composer</option>
+                            <option value="analyzer">Investment analyzer</option>
+                            <option value="settings">Profile settings</option>
+                            <option value="other">Something else</option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label for="page">Page where the problem occurred</label>
+                        <select id="page" name="page">
+                            <option value="dashboard">Dashboard</option>
+                            <option value="new-deal">New Deal</option>
+                            <option value="transactions">Transactions</option>
+                            <option value="analyzer">Analyzer</option>
+                            <option value="settings">Settings</option>
+                            <option value="help">Help</option>
+                            <option value="other">Not sure / other</option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label for="description">Describe the issue <span class="req">*</span></label>
+                        <textarea id="description" name="description" rows="7" maxlength="2000" required
+                                  placeholder="What did you do, what did you expect, and what happened instead?"></textarea>
+                        <span class="counter" id="counter" aria-live="polite"><span id="charCount">0</span> / 2,000</span>
+                    </div>
+
+                    <div class="field">
+                        <label for="email">Email address (optional)</label>
+                        <input type="email" id="email" name="email" autocomplete="email" placeholder="you@example.com">
+                        <small>Add your email if you&rsquo;d like a confirmation with your reference number. Leave it blank if not.</small>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" id="submitBtn">Submit</button>
+                        <button type="button" class="btn" id="cancelBtn">Cancel</button>
+                    </div>
+                </form>
+            </section>
+        </div>
+
+        <!-- VIEW 3: confirmation -->
+        <div id="doneView" hidden>
+            <section class="panel done" aria-labelledby="doneTitle" tabindex="-1" id="donePanel">
+                <div class="check" aria-hidden="true">&#10003;</div>
+                <h2 id="doneTitle">Thanks &mdash; your report was submitted</h2>
+                <div class="ref" id="refNumber"></div>
+                <p>Please keep this reference number if you need to follow up.</p>
+                <p id="emailNote" hidden></p>
+                <div class="form-actions">
+                    <button type="button" class="btn" id="backToHelpBtn">Back to Help</button>
+                    <button type="button" class="btn-primary" id="doneCloseBtn">Close Help</button>
+                </div>
+            </section>
+        </div>
+    </main>
+</div>
+
+<script>
+(function () {
+    'use strict';
+
+    // Exact messages from the FR6 use case.
+    const MSG_MISSING = 'Please fill in all required fields';
+    const MSG_EMAIL = 'Please enter a valid email address or leave the field blank';
+    const MSG_FAILED = 'We could not submit your report – please try again later';
+
+    const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const SEND_TIMEOUT_MS = 25000; // the server tries up to 3 times x 5 s before giving up
+
+    // DEMO MODE. While there is no backend, the page pretends the server accepted the report so the
+    // whole flow can be tried. Nothing is saved or emailed. When POST api/bug-reports exists,
+    // change this to false. (To see the failure message in demo mode, open help.html?mock=fail)
+    const USE_MOCK = true;
+
+    const $ = id => document.getElementById(id);
+    const views = { help: $('helpView'), report: $('reportView'), done: $('doneView') };
+
+    // ---------- where did the user come from? ----------
+    // "Cancel"/"Close Help" return to the page they were on before clicking Help.
+    const FILE_TO_PAGE = {
+        'index.html': 'dashboard', '': 'dashboard',
+        'add.html': 'new-deal', 'transactions.html': 'transactions',
+        'analyzer.html': 'analyzer', 'settings.html': 'settings'
+    };
+
+    function referrerUrl() {
+        try {
+            if (!document.referrer) return null;
+            const u = new URL(document.referrer);
+            if (u.origin !== location.origin) return null;
+            if (/\/help\.html$/.test(u.pathname)) return null;
+            return u;
+        } catch (e) { return null; }
+    }
+
+    const cameFrom = referrerUrl();
+
+    function previousPage() {
+        return cameFrom ? cameFrom.href : 'index.html';
+    }
+
+    // ---------- switching between the three views ----------
+    function show(name) {
+        Object.keys(views).forEach(k => { views[k].hidden = (k !== name); });
+        const target = name === 'report' ? $('category') : name === 'done' ? $('donePanel') : null;
+        window.scrollTo(0, 0);
+        if (target) target.focus();
+    }
+
+    function openReport() {
+        history.replaceState(null, '', location.pathname + location.search + '#report');
+        show('report');
+    }
+
+    function backToHelp() {
+        history.replaceState(null, '', location.pathname + location.search);
+        show('help');
+    }
+
+    document.querySelectorAll('[data-open-report]').forEach(b => b.addEventListener('click', openReport));
+    $('closeHelpBtn').addEventListener('click', () => { location.href = previousPage(); });
+    $('doneCloseBtn').addEventListener('click', () => { location.href = previousPage(); });
+    $('backToHelpBtn').addEventListener('click', backToHelp);
+
+    // Cancel: nothing is saved, the form is thrown away, and the user goes back where they were.
+    $('cancelBtn').addEventListener('click', () => { location.href = previousPage(); });
+
+    // Lets other pages link straight to the form with help.html#report
+    if (location.hash === '#report') show('report');
+    window.addEventListener('hashchange', function () { if (location.hash === '#report') show('report'); });
+
+    // ---------- pre-fill the "page where the problem occurred" ----------
+    (function prefillPage() {
+        if (!cameFrom) return;
+        const file = cameFrom.pathname.split('/').pop();
+        const key = FILE_TO_PAGE[file];
+        if (key) $('page').value = key;
+    })();
+
+    // ---------- description counter ----------
+    const desc = $('description');
+    function updateCounter() {
+        const n = desc.value.length;
+        $('charCount').textContent = n.toLocaleString('en-US');
+        $('counter').classList.toggle('near', n >= 1800);
+    }
+    desc.addEventListener('input', updateCounter);
+
+    // ---------- validation (step 7) ----------
+    const form = $('bugForm');
+
+    function setInvalid(el, bad) {
+        if (bad) el.setAttribute('aria-invalid', 'true'); else el.removeAttribute('aria-invalid');
+    }
+
+    function showFormError(message) {
+        const box = $('formError');
+        box.textContent = message;
+        box.hidden = !message;
+    }
+
+    // Returns true if OK. Otherwise highlights the problem, keeps everything typed, and returns false.
+    function validate() {
+        const category = $('category'), email = $('email');
+        const emptyRequired = [];
+        if (!category.value) emptyRequired.push(category);
+        if (!desc.value.trim()) emptyRequired.push(desc);
+
+        [category, desc, email].forEach(el => setInvalid(el, false));
+
+        if (emptyRequired.length) {
+            emptyRequired.forEach(el => setInvalid(el, true));
+            showFormError(MSG_MISSING);
+            emptyRequired[0].focus();
+            return false;
+        }
+        const emailValue = email.value.trim();
+        if (emailValue && !EMAIL_RE.test(emailValue)) {
+            setInvalid(email, true);
+            showFormError(MSG_EMAIL);
+            email.focus();
+            return false;
+        }
+        showFormError('');
+        return true;
+    }
+
+    // Clear a field's red highlight as soon as the user fixes it.
+    ['category', 'description', 'email'].forEach(id => {
+        $(id).addEventListener('input', () => setInvalid($(id), false));
+        $(id).addEventListener('change', () => setInvalid($(id), false));
+    });
+
+    // ---------- talking to the server (the ONLY place that does) ----------
+    // Returns { ok, data }, where data is the JSON the backend sends back:
+    //   success: { success: true, reportID: "BR-...", emailRequested: true/false }
+    //   failure: { success: false, code: "...", error: "message" }
+    async function sendReport(report, signal) {
+        if (USE_MOCK) return mockSend(report);
+        const res = await fetch('api/bug-reports', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(report),
+            signal: signal
+        });
+        let data = null;
+        try { data = await res.json(); } catch (err) { /* not JSON */ }
+        return { ok: res.ok, data: data };
+    }
+
+    // Demo mode only: a fake server reply after a short pause. Saves nothing, sends nothing.
+    function mockSend(report) {
+        return new Promise(function (resolve) {
+            setTimeout(function () {
+                if (new URLSearchParams(location.search).get('mock') === 'fail') {
+                    resolve({ ok: false, data: { success: false, code: 'STORE_FAILED', error: MSG_FAILED } });
+                    return;
+                }
+                const d = new Date();
+                const p = function (n) { return String(n).padStart(2, '0'); };
+                const id = 'BR-' + d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '-' +
+                    (Math.random().toString(16) + '00000000').slice(2, 10).toUpperCase();
+                resolve({ ok: true, data: { success: true, reportID: id, emailRequested: !!report.email } });
+            }, 400);
+        });
+    }
+
+    // ---------- submit (steps 6-12) ----------
+    let sending = false;
+
+    form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        if (sending) return;
+        if (!validate()) return;
+
+        // Step 8: attach the page URL, browser information and a timestamp.
+        const report = {
+            category: $('category').value,
+            page: $('page').value,
+            description: desc.value.trim(),
+            email: $('email').value.trim(),
+            pageUrl: cameFrom ? cameFrom.href : location.href,
+            browser: navigator.userAgent,
+            clientTime: new Date().toISOString()
+        };
+
+        sending = true;
+        const btn = $('submitBtn');
+        btn.disabled = true;
+        btn.textContent = 'Submitting…';
+        showFormError('');
+
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), SEND_TIMEOUT_MS);
+
+        try {
+            const result = await sendReport(report, controller.signal);
+            const data = result.data;
+
+            if (result.ok && data && data.success) {
+                showConfirmation(data, report.email);
+                return;
+            }
+            // The server said "no": show its message for problems the user can fix,
+            // and the standard "could not submit" message for everything else.
+            if (data && (data.code === 'MISSING_FIELDS' || data.code === 'INVALID_EMAIL' ||
+                         data.code === 'TOO_LONG' || data.code === 'RATE_LIMITED')) {
+                showFormError(data.error);
+            } else {
+                showFormError(MSG_FAILED);
+            }
+        } catch (err) {
+            // Network down, server stopped, or no answer in time. The form data stays as it is.
+            showFormError(MSG_FAILED);
+        } finally {
+            clearTimeout(timer);
+            sending = false;
+            btn.disabled = false;
+            btn.textContent = 'Submit';
+        }
+    });
+
+    // Step 11: confirmation with the report reference number.
+    function showConfirmation(data, email) {
+        $('refNumber').textContent = data.reportID;
+        const note = $('emailNote');
+        if (data.emailRequested && email) {
+            note.textContent = 'We’ll send a confirmation email to ' + email + '.';
+            note.hidden = false;
+        } else {
+            note.hidden = true;
+        }
+        form.reset();
+        [$('category'), desc, $('email')].forEach(el => setInvalid(el, false));
+        updateCounter();
+        history.replaceState(null, '', location.pathname + location.search);
+        show('done');
+    }
+
+    if (USE_MOCK) $('demoNote').hidden = false;
+    updateCounter();
+})();
+</script>
+</body>
+</html>

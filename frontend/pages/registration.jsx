@@ -31,6 +31,7 @@ function Registration(){
                 body: JSON.stringify({ username, password, email, firstname, lastname,
                                     phoneNumber, linkedIn, brokerageORcompany, titleORrole })
             });
+
             const data = await response.json();
             if (response.ok) {
                 localStorage.setItem('token', data.token);
