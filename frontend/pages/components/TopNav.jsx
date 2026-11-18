@@ -29,6 +29,7 @@ function TopNav() {
                 <NavLink to="/newDeal">New Deal</NavLink>
                 <NavLink to="/transactions">Transactions</NavLink>
                 <NavLink to="/settings">Settings</NavLink>
+                <NavLink to="/help">Help</NavLink>
                 <a onClick={logout}>Log Out</a>
             </div>
             <div className="nav-right">

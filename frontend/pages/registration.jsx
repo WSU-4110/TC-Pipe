@@ -1,5 +1,6 @@
-import { useState } from 'react'   
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import "./styleSheets/theme.css"
 import "./styleSheets/loginStyle.css"
 
 function Registration(){
@@ -19,11 +20,14 @@ function Registration(){
     const [brokerageORcompany, setBrokerageORcompany] = useState('');
     const [titleORrole, setTitleORrole] = useState('');
     const [message, setMessage] = useState('');
+    const [messageClass, setMessageClass] = useState('');
+    const [loading, setLoading] = useState(false);
 
     // ======================== HANDLE SUBMISSION FORM ========================= //
-    // TODO: make sure to fetch from correct local host port for backend server
-   const handleSubmit = async (event) => {
+    const handleSubmit = async (event) => {
         event.preventDefault();
+        setMessage('');
+        setLoading(true);
         try {
             const response = await fetch(`${API_URL}/register`, {
                 method: 'POST',
@@ -36,69 +40,96 @@ function Registration(){
             if (response.ok) {
                 localStorage.setItem('token', data.token);
                 setMessage('Registration successful! Redirecting...');
+                setMessageClass('success');
                 navigate('/dashboard');
-            } else {
-                setMessage(data.error || 'Registration failed.');
+                return;
             }
+            setMessage(data.error || 'Registration failed.');
+            setMessageClass('error');
         } catch (error) {
             console.error('Error during registration:', error);
             setMessage('Could not reach the server. Is the backend running?');
+            setMessageClass('error');
         }
+        setLoading(false);
     };
 
     // ======================== REGISTRATION UI ========================= //
     return (
-        <>
-            <div className="login-page">
-                <div className="login-container">
-                    <h2>Create Account</h2>
-                    <form onSubmit={handleSubmit}>
-                        <div className="input-group">
-                            <label className="required">Username</label>
-                            <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} required />
-                        </div>
-                        <div className="input-group">
-                            <label className="required">Password</label>
-                            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-                        </div>
-                        <div className="input-group">
-                            <label className="required">First Name</label>
-                            <input type="text" value={firstname} onChange={(e) => setFirstname(e.target.value)} required />
-                        </div>
-                        <div className="input-group">
-                            <label className="required">Last Name</label>
-                            <input type="text" value={lastname} onChange={(e) => setLastname(e.target.value)} required />
-                        </div>
-                        <div className="input-group">
-                            <label className="required">Email</label>
-                            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-                        </div>
-                        <div className="input-group">
-                            <label>Phone Number</label>
-                            <input type="text" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} />
-                        </div>
-                        <div className="input-group">
-                            <label>Linkedin</label>
-                            <input type="text" value={linkedIn} onChange={(e) => setLinkedin(e.target.value)} />
-                        </div>
-                        <div className="input-group">
-                            <label>Brokerage or Company</label>
-                            <input type="text" value={brokerageORcompany} onChange={(e) => setBrokerageORcompany(e.target.value)} />
-                        </div>
-                        <div className="input-group">
-                            <label>Title or Role</label>
-                            <input type="text" value={titleORrole} onChange={(e) => setTitleORrole(e.target.value)} />
-                        </div>
-                        <button type="submit">Register</button>
-                    </form>
-                    <div className="message">{message}</div>
-                    <div style={{marginTop: '10px'}}>
-                        <Link to="/login">Already have an account? Login here</Link>
-                    </div>
-                </div>
-            </div>
-        </>
-    )
+        <div className="tc-dark auth-page">
+            <title>TC Pipeline | Create Account</title>
+            <div className="auth-card wide">
+                <div className="auth-brand">TC<span>Pipeline</span></div>
+                <h1>Create your account</h1>
+                <p className="auth-sub">Track every deal from contract to close.</p>
 
+                <form onSubmit={handleSubmit}>
+                    <div className="auth-grid">
+                        <div className="input-group">
+                            <label htmlFor="firstname" className="required">First Name</label>
+                            <input id="firstname" type="text" autoComplete="given-name"
+                                value={firstname} onChange={(e) => setFirstname(e.target.value)} required />
+                        </div>
+                        <div className="input-group">
+                            <label htmlFor="lastname" className="required">Last Name</label>
+                            <input id="lastname" type="text" autoComplete="family-name"
+                                value={lastname} onChange={(e) => setLastname(e.target.value)} required />
+                        </div>
+                        <div className="input-group">
+                            <label htmlFor="regUsername" className="required">Username</label>
+                            <input id="regUsername" type="text" autoComplete="username"
+                                value={username} onChange={(e) => setUsername(e.target.value)} required />
+                        </div>
+                        <div className="input-group">
+                            <label htmlFor="email" className="required">Email</label>
+                            <input id="email" type="email" autoComplete="email" placeholder="you@example.com"
+                                value={email} onChange={(e) => setEmail(e.target.value)} required />
+                        </div>
+                        <div className="input-group full">
+                            <label htmlFor="regPassword" className="required">Password</label>
+                            <input id="regPassword" type="password" autoComplete="new-password"
+                                value={password} onChange={(e) => setPassword(e.target.value)} required />
+                            {/* same rule the backend checks in /register */}
+                            <small>At least 8 characters, with an uppercase letter, a lowercase letter, a number and one of @$!%*?&amp;</small>
+                        </div>
+
+                        <div className="auth-divider">Optional</div>
+
+                        <div className="input-group">
+                            <label htmlFor="phoneNumber">Phone Number</label>
+                            <input id="phoneNumber" type="tel" autoComplete="tel" placeholder="+15551234567"
+                                value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} />
+                        </div>
+                        <div className="input-group">
+                            <label htmlFor="linkedIn">LinkedIn</label>
+                            <input id="linkedIn" type="text" placeholder="linkedin.com/in/..."
+                                value={linkedIn} onChange={(e) => setLinkedin(e.target.value)} />
+                        </div>
+                        <div className="input-group">
+                            <label htmlFor="brokerageORcompany">Brokerage or Company</label>
+                            <input id="brokerageORcompany" type="text" autoComplete="organization"
+                                value={brokerageORcompany} onChange={(e) => setBrokerageORcompany(e.target.value)} />
+                        </div>
+                        <div className="input-group">
+                            <label htmlFor="titleORrole">Title or Role</label>
+                            <input id="titleORrole" type="text" autoComplete="organization-title" placeholder="Transaction Coordinator"
+                                value={titleORrole} onChange={(e) => setTitleORrole(e.target.value)} />
+                        </div>
+                    </div>
+
+                    <button type="submit" className="btn btn-primary auth-submit" disabled={loading}>
+                        {loading ? 'Creating account…' : 'Create Account'}
+                    </button>
+                </form>
+
+                {message && <div className={'auth-message ' + messageClass} role="status">{message}</div>}
+
+                <p className="auth-switch">
+                    Already have an account? <Link to="/login">Log in here</Link>
+                </p>
+            </div>
+        </div>
+    )
 }
+
 export default Registration;

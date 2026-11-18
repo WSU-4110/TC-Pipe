@@ -1,11 +1,4 @@
-// =====================================================================
-// DASHBOARD HELPERS
-// ---------------------------------------------------------------------
-// Pure functions (no React, no DOM) that turn raw transaction rows from
-// the backend into the numbers/lists the dashboard shows.
-// Moved out of dashboard.html's <script> block so dashboard.jsx stays
-// focused on UI.
-// =====================================================================
+// =================== DASHBOARD SCRIPTS ====================== //
 
 // ---------- settings ----------
 export const SOON_DAYS           = 7;

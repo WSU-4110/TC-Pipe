@@ -26,9 +26,9 @@
 }
 .tc-dark *, .tc-dark *::before, .tc-dark *::after { box-sizing: border-box; }
 
-/* In React every page's CSS is loaded at once, so loginStyle.css's
-   "body { display:flex; centered }" also hits this page. Undo it
-   whenever a .tc-dark page is on screen. */
+/* Dark background edge-to-edge (no default 8px body margin) whenever a
+   .tc-dark page is on screen. (This also used to undo loginStyle.css's
+   old global "body" rule, which has since been scoped to the login pages.) */
 body:has(.tc-dark) {
     display: block;
     height: auto;
@@ -105,7 +105,7 @@ body:has(.tc-dark) {
     padding: 8px 16px; border-radius: 8px;
     font-size: 13.5px; font-weight: 500; cursor: pointer; border: none; font-family: inherit;
     transition: background .15s, opacity .15s;
-    width: auto; /* loginStyle.css makes every button 100% wide */
+    width: auto;
 }
 .tc-dark .btn-primary { background: var(--accent); color: #fff; }
 .tc-dark .btn-primary:hover { background: var(--accent-h); }

@@ -8,6 +8,7 @@ import Transactions from './pages/transactions';
 // import Sales from './pages/sales.jsx';
 import Registration from './pages/registration';
 import Settings from './pages/settings';
+import Help from './pages/help';
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
         {/* <Route path="/sales" element={<Sales />} /> */}
         <Route path="/register" element={<Registration />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/help" element={<Help />} />
       </Routes>
     </Router>
   );
