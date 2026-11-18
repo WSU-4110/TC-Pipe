@@ -1,26 +1,61 @@
-import {useState, useEffect} from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import "./styleSheets/style.css";
-import * as appScript from "./scripts/app.js";
+import "./styleSheets/theme.css";
+import "./styleSheets/transactions.css";
+import TopNav from "./components/TopNav.jsx";
+import { buildEmailTemplate } from "./scripts/app.js";
+import { analyze, cmpNullLast, fmtDate, plural, SOON_DAYS } from "./scripts/dashboardHelpers.js";
 
-function transactions() {
+const STAGES = [
+    { value: 'pre-contract',   label: 'Pre-Contract' },
+    { value: 'active',         label: 'Active' },
+    { value: 'inspection',     label: 'Inspection' },
+    { value: 'appraisal',      label: 'Appraisal' },
+    { value: 'underwriting',   label: 'Underwriting' },
+    { value: 'clear-to-close', label: 'Clear to Close' },
+    { value: 'closed',         label: 'Closed' },
+    { value: 'terminated',     label: 'Terminated' },
+];
+const stageLabel = value => (STAGES.find(s => s.value === value) || {}).label || value || '—';
+
+const TEMPLATES = [
+    { value: 'welcome',   label: 'Welcome & Next Steps' },
+    { value: 'emd',       label: 'EMD Received' },
+    { value: 'inspection',label: 'Inspection Complete' },
+    { value: 'appraisal', label: 'Appraisal Received' },
+    { value: 'ctc',       label: 'Clear to Close' },
+    { value: 'weekly',    label: 'Weekly Status Update' },
+    { value: 'postclose', label: 'Post-Close Thank You' },
+];
+
+function Transactions() {
     // ======================== ATTRIBUTES ========================= //
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-
-    // navigation hook
     const navigate = useNavigate();
-    // use states
+
+    const [transactions, setTransactions] = useState([]); // raw rows from the backend
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+
+    // filters
     const [searchTerm, setSearchTerm] = useState('');
     const [stageFilter, setStageFilter] = useState('');
     const [riskFilter, setRiskFilter] = useState('');
-    const [transactions, setTransactions] = useState([]);
 
-    const [loading, setLoading] = useState(true);
+    // email composer: which deal is open + what's in the boxes
+    const [composerDeal, setComposerDeal] = useState(null);
+    const [template, setTemplate] = useState('');
+    const [subject, setSubject] = useState('');
+    const [body, setBody] = useState('');
+    const composerRef = useRef(null);
 
     // ======================== LOAD TRANSACTIONS FROM BACKEND ========================= //
-    // useEffect with [] runs ONCE when the page first opens
+    // runs once when the page opens
     useEffect(() => {
-        const currentTransactions = async () => {
+        let ignore = false; // true if the user leaves the page before the fetch finishes
+
+        const load = async () => {
             const token = localStorage.getItem('token');
             if (!token) {
                 navigate('/login');
@@ -37,155 +72,205 @@ function transactions() {
                     return;
                 }
                 const data = await response.json();
-                setTransactions(data); // saving to state makes React re-draw the table
-            } catch (error) {
-                console.error('Error fetching transactions:', error);
+                if (!Array.isArray(data)) throw new Error(data.error || 'The server did not send back a list of transactions.');
+                if (!ignore) setTransactions(data);
+            } catch (err) {
+                console.error('Error fetching transactions:', err);
+                if (!ignore) setError(err.message || 'Check that the server is running.');
             } finally {
-                setLoading(false);
+                if (!ignore) setLoading(false);
             }
         };
-        currentTransactions();
-    }, []);
 
-    // ======================== FILTERS ========================= //
-    // no extra fetching needed: every time a filter state changes, React re-runs
-    // this function and recalculates the visible rows from the data we already have
-    const visibleTransactions = transactions.filter(t => {
-        const search = searchTerm.toLowerCase();
-        const matchesSearch = !search ||
-            (t.fileID || '').toLowerCase().includes(search) ||
-            (t.address || '').toLowerCase().includes(search);
-        const matchesStage = !stageFilter || t.stage === stageFilter;
-        const risk = t.riskLevel || appScript.autoRisk(t);
-        const matchesRisk = !riskFilter || (risk || '').toLowerCase() === riskFilter;
-        return matchesSearch && matchesStage && matchesRisk;
-    });
+        load();
+        return () => { ignore = true; };
+    }, [API_URL, navigate]);
 
-    // ======================== HANDLE FILTER CHANGES ========================= //
-    const changeSearchTerm = (event) => setSearchTerm(event.target.value);
-    const changeRiskFilter = (event) => setRiskFilter(event.target.value);
-    const changeStageFilter = (event) => setStageFilter(event.target.value);
+    // ======================== DERIVED DATA ========================= //
+    // analyze() is the same helper the dashboard uses, so risk levels and
+    // days-to-close match on both pages
+    const deals = useMemo(
+        () => transactions.map(t => ({ raw: t, ...analyze(t) }))
+                          .sort((a, b) => cmpNullLast(a.closeDays, b.closeDays)),
+        [transactions]
+    );
 
-    // ======================== LOGOUT ========================= //
-    const logout = () => {
-        localStorage.removeItem('token');
-        navigate('/login');
+    // filters run on every render; no extra fetching needed
+    const search = searchTerm.trim().toLowerCase();
+    const visibleDeals = deals.filter(a =>
+        (!search || a.haystack.includes(search)) &&
+        (!stageFilter || a.stage === stageFilter) &&
+        (!riskFilter || (!['closed', 'terminated'].includes(a.stage) && a.risk.toLowerCase() === riskFilter))
+    );
+
+    // ======================== EMAIL COMPOSER ========================= //
+    const openComposer = (deal) => {
+        setComposerDeal(deal);
+        setTemplate('');
+        setSubject('');
+        setBody('');
     };
+
+    const closeComposer = () => setComposerDeal(null);
+
+    // picking a template fills in the subject + body
+    const chooseTemplate = (key) => {
+        setTemplate(key);
+        // the templates in app.js use Julian's field names, so map our DB column names onto them
+        const raw = composerDeal.raw;
+        const email = buildEmailTemplate(key, {
+            ...raw,
+            propertyAddress: raw.address,
+            emdAmount: raw.EMDamount,
+            emdDueDate: raw.EMDdueDate,
+        });
+        setSubject(email ? email.subject : '');
+        setBody(email ? email.body : '');
+    };
+
+    // scroll down to the composer when it opens
+    // (an effect that only touches the page, no setState, is what effects are for)
+    useEffect(() => {
+        if (composerDeal && composerRef.current) {
+            composerRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+    }, [composerDeal]);
+
+    const copyEmail = async () => {
+        await navigator.clipboard.writeText('Subject: ' + subject + '\n\n' + body);
+        alert('Email copied to clipboard!');
+    };
+    const openInGmail = () =>
+        window.open('https://mail.google.com/mail/?view=cm&su=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body));
+    const openInOutlook = () =>
+        window.open('https://outlook.live.com/mail/0/deeplink/compose?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body));
 
     // ======================== TRANSACTIONS UI ========================= //
     return (
-        <>
-            <div id="app">
-                <div id="sidebar">
-                    <a href="/dashboard" onClick={(e) => { navigate('/dashboard')}} id="brand">TC Pipeline</a>
-                    <a href="/dashboard" onClick={(e) => { navigate('/dashboard')}}>Dashboard</a>
-                    <a href="/newDeal" onClick={(e) => { navigate('/newDeal')}}>New Deal</a>
-                    <a href="/transactions" onClick={(e) => { navigate('/transactions')}}>Transactions</a>
-                    <a href="/settings" onClick={(e) => { navigate('/settings')}}>Settings</a>
-                    <a onClick={logout} style={{ cursor: 'pointer' }}>Log Out</a>
+        <div className="tc-dark tx-page">
+            <TopNav />
 
-
+            <main id="main">
+                <div className="page-head">
+                    <div>
+                        <h1>Transactions</h1>
+                        {!loading && !error && (
+                            <p>{plural(deals.length, 'transaction')}{visibleDeals.length !== deals.length ? ` · ${visibleDeals.length} shown` : ''}</p>
+                        )}
+                    </div>
+                    <button type="button" className="btn btn-primary" onClick={() => navigate('/newDeal')}>+ New Deal</button>
                 </div>
 
-                <div id="main">
-                    <h1>Transactions</h1>
-                    <div id="filters">
-                        <input type="text" id="search" placeholder="Search by File ID or Address: " onChange={changeSearchTerm}/>
-                        <select id="stageFilter" onChange={changeStageFilter}>
-                            <option value="" default>All Stages</option>
-                            <option value="pre-contract">Pre-Contract</option>
-                            <option value="active">Active</option>
-                            <option value="inspection">Inspection</option>
-                            <option value="appraisal">Appraisal</option>
-                            <option value="underwriting">Underwriting</option>
-                            <option value="clear-to-close">Clear to Close</option>
-                            <option value="closed">Closed</option>
-                            <option value="terminated">Terminated</option>
-                        </select>
-
-                        <select id="riskFilter" onChange={changeRiskFilter}>
-                            <option value="" default>All Risk</option>
-                            <option value="low">Low</option>
-                            <option value="medium">Medium</option>
-                            <option value="high">High</option>
-                        </select>
+                {error && (
+                    <div className="error-banner">
+                        <span><strong>Couldn’t load transactions.</strong> {error}</span>
                     </div>
+                )}
 
-                    <div id="table">
-                        <h2>All Transactions</h2>
+                {/* ---------- FILTERS ---------- */}
+                <div id="filters">
+                    <label className="sr-only" htmlFor="search">Search transactions</label>
+                    <input type="search" id="search" placeholder="Search file ID, address or client"
+                        value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+
+                    <label className="sr-only" htmlFor="stageFilter">Filter by stage</label>
+                    <select id="stageFilter" value={stageFilter} onChange={e => setStageFilter(e.target.value)}>
+                        <option value="">All Stages</option>
+                        {STAGES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                    </select>
+
+                    <label className="sr-only" htmlFor="riskFilter">Filter by risk</label>
+                    <select id="riskFilter" value={riskFilter} onChange={e => setRiskFilter(e.target.value)}>
+                        <option value="">All Risk</option>
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                    </select>
+                </div>
+
+                {/* ---------- TABLE ---------- */}
+                <div id="table">
+                    <h2>All Transactions</h2>
+                    <div className="table-wrap">
                         <table>
+                            <thead>
+                                <tr>
+                                    <th>File ID</th>
+                                    <th>Address</th>
+                                    <th>Stage</th>
+                                    <th>Closing Date</th>
+                                    <th>Days to Close</th>
+                                    <th>Risk</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
                             <tbody>
-                            <tr>
-                                <th>File ID</th>
-                                <th>Address</th>
-                                <th>Stage</th>
-                                <th>Closing Date</th>
-                                <th>Days to Close</th>
-                                <th>Risk</th>
-                                <th>Actions</th>
-                            </tr>
-                            </tbody>
-                            <tbody id="transactionTableBody">
-                            {loading ? (
-                                <tr><td colSpan="7" style={{ textAlign: 'center' }}>Loading transactions...</td></tr>
-                            ) : visibleTransactions.length === 0 ? (
-                                <tr><td colSpan="7" style={{ textAlign: 'center' }}>No transactions found.</td></tr>
-                            ) : (
-                                // .map() turns each transaction object into one table row
-                                visibleTransactions.map(t => {
-                                    const risk = t.riskLevel || appScript.autoRisk(t);
-                                    const riskClass = /high/i.test(risk) ? 'risk-high' : /medium/i.test(risk) ? 'risk-medium' : 'risk-low';
-                                    return (
-                                        <tr key={t.fileID}>
-                                            <td>{t.fileID}</td>
-                                            <td>{t.address || '—'}</td>
-                                            <td>{t.stage || '—'}</td>
-                                            <td>{t.closingDate || '—'}</td>
-                                            <td>{appScript.daysToClose(t.closingDate)}</td>
-                                            <td className={riskClass}>{risk}</td>
-                                            <td>
-                                                <a href="#" onClick={(e) => { e.preventDefault(); appScript.openComposer(t.fileID); }}>Email</a>
-                                            </td>
-                                        </tr>
-                                    );
-                                })
-                            )}
+                                {loading ? (
+                                    <tr className="empty-row"><td colSpan="7">Loading transactions…</td></tr>
+                                ) : visibleDeals.length === 0 ? (
+                                    <tr className="empty-row"><td colSpan="7">
+                                        {deals.length === 0 ? 'No transactions yet. Add one with “+ New Deal”.' : 'No transactions match your filters.'}
+                                    </td></tr>
+                                ) : (
+                                    // .map() turns each deal into one table row
+                                    visibleDeals.map(a => {
+                                        // closed/terminated deals are finished: no "late" color and no risk
+                                        const finished = a.stage === 'closed' || a.stage === 'terminated';
+                                        const daysCls = finished || a.closeDays === null ? '' : a.closeDays <= 0 ? 'late' : a.closeDays <= SOON_DAYS ? 'soon' : '';
+                                        return (
+                                            <tr key={a.id} className={composerDeal && composerDeal.id === a.id ? 'selected' : ''}>
+                                                <td><strong>{a.id || '—'}</strong></td>
+                                                <td>{a.address || '—'}</td>
+                                                <td><span className={'badge ' + a.stage}>{stageLabel(a.stage)}</span></td>
+                                                <td>{a.closeDate ? fmtDate(a.closeDate) : '—'}</td>
+                                                <td className={daysCls}>
+                                                    {a.closeDays === null ? '—' : a.closeDays < 0 ? plural(-a.closeDays, 'day') + ' ago' : a.closeDays}
+                                                </td>
+                                                {finished
+                                                    ? <td>—</td>
+                                                    : <td className={'risk-' + a.risk.toLowerCase()} title={a.riskReason}>{a.risk}</td>}
+                                                <td><a onClick={() => openComposer(a)}>Email</a></td>
+                                            </tr>
+                                        );
+                                    })
+                                )}
                             </tbody>
                         </table>
                     </div>
+                </div>
 
-                    <div id="emailComposer" style={{display:"none"}}>
-                        <h2>Email Composer</h2>
+                {/* ---------- EMAIL COMPOSER (only rendered when a deal is picked) ---------- */}
+                {composerDeal && (
+                    <div id="emailComposer" ref={composerRef}>
+                        <h2>Email Composer: {composerDeal.id}</h2>
                         <div className="field">
                             <label htmlFor="templateSelect">Select Template</label>
-                            <select id="templateSelect" onChange={appScript.loadTemplate}>
+                            <select id="templateSelect" value={template} onChange={e => chooseTemplate(e.target.value)}>
                                 <option value="">Select a Template</option>
-                                <option value="welcome">Welcome & Next Steps</option>
-                                <option value="emd">EMD Received</option>
-                                <option value="inspection">Inspection Complete</option>
-                                <option value="appraisal">Appraisal Received</option>
-                                <option value="ctc">Clear to Close</option>
-                                <option value="weekly">Weekly Status Update</option>
-                                <option value="postclose">Post-Close Thank You</option>
+                                {TEMPLATES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                             </select>
                         </div>
                         <div className="field">
                             <label htmlFor="subjectLine">Subject Line</label>
-                            <input type="text" id="subjectLine" readOnly/>
+                            <input type="text" id="subjectLine" value={subject} onChange={e => setSubject(e.target.value)} />
                         </div>
                         <div className="field">
                             <label htmlFor="emailBody">Email Body</label>
-                            <textarea id="emailBody" style={{minHeight: "300px"}}></textarea>
+                            <textarea id="emailBody" value={body} onChange={e => setBody(e.target.value)}></textarea>
                         </div>
-                        <button onClick={appScript.copyEmail}>Copy to Clipboard</button>
-                        <button onClick={appScript.openInGmail}>Open in Gmail</button>
-                        <button onClick={appScript.openInOutlook}>Open in Outlook</button>
-                        <button onClick={appScript.closeComposer}>Close</button>
+                        <div className="composer-actions">
+                            <button type="button" className="btn btn-primary" onClick={copyEmail} disabled={!body}>Copy to Clipboard</button>
+                            <button type="button" className="btn btn-ghost" onClick={openInGmail} disabled={!body}>Open in Gmail</button>
+                            <button type="button" className="btn btn-ghost" onClick={openInOutlook} disabled={!body}>Open in Outlook</button>
+                            <button type="button" className="btn btn-ghost" onClick={closeComposer}>Close</button>
+                        </div>
                     </div>
-                </div>
-            </div>
-        </>
-    )
+                )}
+            </main>
+
+            <button id="chatbot-btn" title="TC Pipeline Assistant" onClick={() => alert('Chatbot coming soon!')}>🤖</button>
+        </div>
+    );
 }
 
-export default transactions;
+export default Transactions;

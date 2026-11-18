@@ -470,9 +470,19 @@ ${settings.linkedInUrl ? 'LinkedIn: ' + settings.linkedInUrl : ''}
 }
 
 export function loadTemplate() {
-    const t = currentComposerDeal;
-    if (!t) return;
+    if (!currentComposerDeal) return;
     const template = document.getElementById('templateSelect').value;
+    const email = buildEmailTemplate(template, currentComposerDeal);
+    if (email) {
+        document.getElementById('subjectLine').value = email.subject;
+        document.getElementById('emailBody').value = email.body;
+    }
+}
+
+// Returns { subject, body } for one template key and one deal (or null).
+// No DOM access, so React pages can use it and keep the text in state.
+export function buildEmailTemplate(template, t) {
+    if (!t) return null;
     const sig = getSignature();
 
     const templates = {
@@ -627,8 +637,5 @@ ${sig}`
         }
     };
 
-    if (templates[template]) {
-        document.getElementById('subjectLine').value = templates[template].subject;
-        document.getElementById('emailBody').value = templates[template].body;
-    }
+    return templates[template] || null;
 }

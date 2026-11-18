@@ -1,114 +1,187 @@
-import {useState} from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import "./styleSheets/style.css";
-import "./scripts/app.js";
+import "./styleSheets/theme.css";
+import "./styleSheets/newDeal.css";
+import TopNav from "./components/TopNav.jsx";
+import { loadData } from "./scripts/app.js";
 
+// ======================== FORM FIELDS (as data) ========================= //
+// Instead of writing the same <div className="field"><label/><input/></div>
+// 31 times, each section lists its fields here and the JSX below loops over
+// them with .map(). To add a field: add one line here (and a DB column).
+//
+// `name` is the MySQL column name in Backend/index.js, so the form state
+// can be sent to the backend as-is: no renaming needed on submit.
+const SECTIONS = [
+    {
+        title: 'Basic Info',
+        fields: [
+            { name: 'fileID', label: 'File ID', placeholder: 'Leave blank to auto-generate' },
+            { name: 'side', label: 'Side', type: 'select', options: [
+                ['', 'Select Side'], ['buyer', 'Buyer'], ['seller', 'Seller'], ['dual', 'Dual Agency']] },
+            { name: 'propertyType', label: 'Property Type', type: 'select', options: [
+                ['', 'Select Property Type'], ['singleFamily', 'Single Family'], ['condoOrTownhouse', 'Condo/Townhouse'],
+                ['multiFamily', 'Multi-Family'], ['commercial', 'Commercial'], ['landOrLot', 'Land/Lot']] },
+            { name: 'transactionType', label: 'Transaction Type', type: 'select', options: [
+                ['', 'Select Type'], ['standardSale', 'Standard Sale'], ['shortSale', 'Short Sale'],
+                ['reoOrBankOwned', 'REO/Bank Owned'], ['newConstruction', 'New Construction']] },
+            { name: 'stage', label: 'Stage', type: 'select', options: [
+                ['', 'Select Stage'], ['pre-contract', 'Pre-Contract'], ['active', 'Active'], ['inspection', 'Inspection'],
+                ['appraisal', 'Appraisal'], ['underwriting', 'Underwriting'], ['clear-to-close', 'Clear to Close'],
+                ['closed', 'Closed'], ['terminated', 'Terminated']] },
+            { name: 'MLSNumber', label: 'MLS Number', inputMode: 'numeric' },
+        ],
+    },
+    {
+        title: 'Parties',
+        fields: [
+            { name: 'buyerName', label: 'Buyer Name' },
+            { name: 'sellerName', label: 'Seller Name' },
+            { name: 'listingAgent', label: 'Listing Agent' },
+            { name: 'assignedTo', label: 'Assigned To' },
+        ],
+    },
+    {
+        title: 'Dates & Deadlines',
+        fields: [
+            { name: 'contractDate', label: 'Contract Date', type: 'date' },
+            { name: 'closingDate', label: 'Closing Date', type: 'date' },
+            { name: 'closingTime', label: 'Closing Time', type: 'time' },
+            { name: 'EMDdueDate', label: 'EMD Due Date', type: 'date' },
+            { name: 'inspectionDeadline', label: 'Inspection Deadline', type: 'date' },
+            { name: 'appraisalDeadline', label: 'Appraisal Deadline', type: 'date' },
+            { name: 'financingContingencyDeadline', label: 'Financing Contingency Deadline', type: 'date' },
+        ],
+    },
+    {
+        title: 'Location',
+        fields: [
+            { name: 'address', label: 'Property Address' },
+            { name: 'closingLocation', label: 'Closing Location' },
+        ],
+    },
+    {
+        title: 'Financials',
+        fields: [
+            { name: 'purchasePrice', label: 'Purchase Price ($)', type: 'number' },
+            { name: 'listingPrice', label: 'Listing Price ($)', type: 'number' },
+            { name: 'EMDamount', label: 'EMD Amount ($)', type: 'number' },
+        ],
+    },
+    {
+        title: 'Title & Lender',
+        fields: [
+            { name: 'titleCompanyName', label: 'Title Company Name' },
+            { name: 'titleCompanyContact', label: 'Title Company Contact' },
+            { name: 'lenderName', label: 'Lender Name' },
+            { name: 'lenderContact', label: 'Lender Contact' },
+        ],
+    },
+    {
+        title: 'Risk & Notes',
+        fields: [
+            { name: 'riskLevel', label: 'Risk Level', type: 'select', options: [
+                ['', 'Calculate automatically'], ['low', 'Low'], ['medium', 'Medium'], ['high', 'High']] },
+            { name: 'nextAction', label: 'Next Action' },
+            { name: 'nextActionDue', label: 'Next Action Due Date', type: 'date' },
+            { name: 'blocker', label: 'Blocker' },
+            { name: 'notes', label: 'Notes', type: 'textarea', full: true },
+        ],
+    },
+];
 
+const MILESTONES = [
+    { name: 'earnestMoneyReceived',  label: 'Earnest Money Received' },
+    { name: 'inspectionComplete',    label: 'Inspection Complete' },
+    { name: 'appraisalReceived',     label: 'Appraisal Received' },
+    { name: 'titleClear',            label: 'Title Clear' },
+    { name: 'insuranceConfirmed',    label: 'Insurance Confirmed' },
+    { name: 'clearToCloseConfirmed', label: 'Clear to Close Confirmed' },
+];
+
+// starting values: '' for every text field, false for every checkbox
+const EMPTY_DEAL = {
+    ...Object.fromEntries(SECTIONS.flatMap(s => s.fields).map(f => [f.name, ''])),
+    ...Object.fromEntries(MILESTONES.map(m => [m.name, false])),
+};
+
+// ======================== ONE FORM FIELD ========================= //
+// picks <select>, <textarea> or <input> based on field.type
+function Field({ field, value, onChange }) {
+    let control;
+    if (field.type === 'select') {
+        control = (
+            <select id={field.name} name={field.name} value={value} onChange={onChange}>
+                {field.options.map(([optValue, optLabel]) => <option key={optValue} value={optValue}>{optLabel}</option>)}
+            </select>
+        );
+    } else if (field.type === 'textarea') {
+        control = <textarea id={field.name} name={field.name} value={value} onChange={onChange}></textarea>;
+    } else {
+        control = (
+            <input
+                type={field.type || 'text'}
+                id={field.name}
+                name={field.name}
+                value={value}
+                onChange={onChange}
+                placeholder={field.placeholder}
+                inputMode={field.inputMode}
+                min={field.type === 'number' ? 0 : undefined}
+                step={field.type === 'number' ? 'any' : undefined}
+            />
+        );
+    }
+    return (
+        <div className={'field' + (field.full ? ' full' : '')}>
+            <label htmlFor={field.name}>{field.label}</label>
+            {control}
+        </div>
+    );
+}
+
+// ======================== NEW DEAL PAGE ========================= //
 function NewDeal() {
-    // ======================== ATTRIBUTES ========================= //
-    // navigation hook
     const navigate = useNavigate();
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
-    // useStates
-    const [formData, setFormData] = useState({
-        fileID: '',
-        address: '',
-        clientName: '',
-        stage: 'Lead',
-        closingDate: '',
-        riskLevel: 'Low'
-    });
+    // the whole form lives in ONE state object: { fileID: '', side: '', ..., titleClear: false }
+    // ...pre-filled with the Deal Defaults saved on the Settings page (title company, lender, etc.)
+    const [deal, setDeal] = useState(() => ({ ...EMPTY_DEAL, ...(loadData('tcDealDefaults') || {}) }));
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState('');
 
     // ======================== HANDLE FORM CHANGES ========================= //
-    // when field or input changes update the corresponding value in formData state
+    // one handler for every input: `name` says which key in `deal` to update.
+    // Checkboxes report .checked (true/false); everything else reports .value.
     const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prevState => ({
-            ...prevState,
-            [name]: value
-        }));
-    }
+        const { name, type, value, checked } = e.target;
+        setDeal(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+    };
 
-    // add new transaction to the database when form is submitted
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-    const [message, setMessage] = useState('');
-
+    // ======================== SUBMIT ========================= //
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setError('');
 
-        // grab input data
-        const f = e.target.elements;
-        const deal = {
-            // ----- BASIC INFO ----- //
-            fileID: f.fileID.value,
-            side: f.side.value,
-            propertyType: f.propertyType.value,
-            transactionType: f.transactionType.value,
-            stage: f.stage.value,
-            MLSNumber: f.mlsNumber.value,
-            
-            // ----- PARTIES ----- //
-            buyerName: f.buyerName.value,
-            sellerName: f.sellerName.value,
-            listingAgent: f.listingAgent.value,
-            assignedTo: f.assignee.value,
-
-            // ----- DATES & DEADLINES ----- //
-            contractDate: f.contractDate.value,
-            closingDate: f.closingDate.value,
-            closingTime: f.closingTime.value,
-            EMDdueDate: f.emdDueDate.value,
-            inspectionDeadline: f.inspectionDeadline.value,
-            appraisalDeadline: f.appraisalDeadline.value,
-            financingContingencyDeadline: f.financingContingencyDeadline.value,
-
-            // ----- LOCATION ----- //
-            address: f.propertyAddress.value,
-            closingLocation: f.closingLocation.value,
-
-            // ----- FINANCIALS ----- //
-            purchasePrice: f.purchasePrice.value,
-            listingPrice: f.listingPrice.value,
-            EMDamount: f.emdAmount.value,
-
-            // ----- TITLE & LENDER ----- //
-            titleCompanyName: f.titleCompanyName.value,
-            titleCompanyContact: f.titleCompanyContact.value,
-            lenderName: f.lenderName.value,
-            lenderContact: f.lenderContact.value,
-
-            // ----- RISK & NOTES ----- //
-            riskLevel: f.riskLevel.value,
-            nextAction: f.nextAction.value,
-            nextActionDue: f.nextActionDue.value,
-            blocker: f.blocker.value,
-            notes: f.notes.value,
-
-            // ---- MILESTONES ----- //
-            earnestMoneyReceived: f.earnestMoneyReceived.checked,
-            inspectionComplete: f.inspectionComplete.checked,
-            appraisalReceived: f.appraisalReceived.checked,
-            titleClear: f.titleClear.checked,
-            insuranceConfirmed: f.insuranceConfirmed.checked,
-            clearToCloseConfirmed: f.clearToCloseConfirmed.checked,
-        };
-
-        // check which user this is
+        // who is saving? the token from login tells the backend
         const token = localStorage.getItem('token');
         if (!token) {
             navigate('/login');
             return;
         }
 
-        // send the data to the backend to save it in the database
+        setSaving(true);
         try {
+            // `deal` already uses the DB column names, so it's sent as-is
             const response = await fetch(`${API_URL}/newDeal`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`,
                 },
-                body: JSON.stringify(deal),
+                body: JSON.stringify({ ...deal, fileID: deal.fileID.trim() }),
             });
 
             if (response.status === 401 || response.status === 403) {
@@ -119,376 +192,79 @@ function NewDeal() {
 
             const data = await response.json();
             if (!response.ok) {
-                setMessage(data.error || 'Could not save deal.');
+                setError(data.error || 'Could not save deal.');
+                setSaving(false);
                 return;
             }
 
-            // 4. Saved! Go to the transactions page, which reloads this user's deals
+            // saved! the transactions page loads this user's deals again
             navigate('/transactions');
         } catch (err) {
             console.error('Error saving deal:', err);
-            setMessage('Could not reach the server.');
+            setError('Could not reach the server. Check that the backend is running.');
+            setSaving(false);
         }
-    }
-
-
-    // ======================== LOGOUT ========================= //
-
-    // logout function to clear the token and navigate back to login page
-    const logout = () => {
-        localStorage.removeItem('token');
-        navigate('/login');
     };
 
     // ======================== NEW DEAL UI ========================= //
     return (
-        <>
-            <div id="app">
-                <div id="sidebar">
-                    <a href='/dashboard' onClick={() => navigate('/dashboard')} id="brand">TC Pipeline</a>
-                    <a href="/dashboard" onClick={() => navigate('/dashboard')}>Dashboard</a>
-                    <a href="/newDeal" onClick={() => navigate('/newDeal')}>New Deal</a>
-                    <a href="/transactions" onClick={() => navigate('/transactions')}>Transactions</a>
-                    <a href="/settings" onClick={() => navigate('/settings')}>Settings</a>
-                    <a onClick={logout} style={{ cursor: 'pointer' }}>Log Out</a>
+        <div className="tc-dark nd-page">
+            <TopNav />
+
+            <main id="main">
+                <div className="page-head">
+                    <div>
+                        <h1>Add Transaction</h1>
+                        <p>Only the fields you fill in are saved. Everything can be left blank.</p>
+                    </div>
                 </div>
-                <div id="main">
-                    <h1>Add Transaction</h1>
-                    <form onSubmit={handleSubmit} className="deal-form">
-                        <fieldset>
-                            <legend>Basic Info</legend>
+
+                <form id="dealForm" onSubmit={handleSubmit}>
+                    {/* one <fieldset> per section, one <Field> per field */}
+                    {SECTIONS.map(section => (
+                        <fieldset key={section.title}>
+                            <legend>{section.title}</legend>
                             <div className="field-grid">
-                                <div className="field">
-                                    <label htmlFor="fileID">File ID</label>
-                                    <input 
-                                        type="text" 
-                                        id="fileID"
-                                        name="fileID"
-                                        value={formData.fileID}
-                                        onChange={handleChange}
-                                        placeholder="Leave blank to auto-generate"
-                                    />
-                                </div>
-                                <div className="field">
-                                    <label htmlFor="side">Side</label>
-                                    <select id="side">
-                                        <option value="" default>Select Side</option>
-                                        <option value="buyer">Buyer</option>
-                                        <option value="seller">Seller</option>
-                                        <option value="dual">Dual Agency</option>
-                                    </select>
-                                </div>
-                                <div className="field">
-                                    <label htmlFor="propertyType">Property Type</label>
-                                    <select id="propertyType">
-                                        <option value="" default>Select Property Type</option>
-                                        <option value="singleFamily">Single Family</option>
-                                        <option value="condoOrTownhouse">Condo/Townhouse</option>
-                                        <option value="multiFamily">Multi-Family</option>
-                                        <option value="commercial">Commercial</option>
-                                        <option value="landOrLot">Land/Lot</option>
-                                    </select>
-                                </div>
-                                <div className="field">
-                                    <label htmlFor="transactionType">Transaction Type</label>
-                                    <select id="transactionType">
-                                        <option value="" default>Select Type</option>
-                                        <option value="standardSale">Standard Sale</option>
-                                        <option value="shortSale">Short Sale</option>
-                                        <option value="reoOrBankOwned">REO/Bank Owned</option>
-                                        <option value="newConstruction">New Construction</option>
-                                    </select>
-                                </div>
-                                <div className="field">
-                                    <label htmlFor="stage">Stage</label>
-                                    <select id="stage">
-                                        <option value="" default>Select Stage</option>
-                                        <option value="pre-contract">Pre-Contract</option>
-                                        <option value="active">Active</option>
-                                        <option value="inspection">Inspection</option>
-                                        <option value="appraisal">Appraisal</option>
-                                        <option value="underwriting">Underwriting</option>
-                                        <option value="clear-to-close">Clear to Close</option>
-                                        <option value="closed">Closed</option>
-                                        <option value="terminated">Terminated</option>
-                                    </select>
-                                </div>
-                                <div className="field">
-                                    <label htmlFor="mlsNumber">MLS Number</label>
-                                    <input 
-                                        type="text"
-                                        id="mlsNumber"
-                                    />
-                                </div>
+                                {section.fields.map(field => (
+                                    <Field key={field.name} field={field} value={deal[field.name]} onChange={handleChange} />
+                                ))}
                             </div>
                         </fieldset>
+                    ))}
 
-                        <fieldset>
-                            <legend>Parties</legend>
-                            <div className="field-grid">
-                                <div className="field">
-                                    <label htmlFor="buyerName">Buyer Name</label>
-                                    <input 
-                                        type="text" 
-                                        id="buyerName"
-                                    />
-                                </div>
-                                <div className="field">
-                                    <label htmlFor="sellerName">Seller Name</label>
-                                    <input 
-                                        type="text" 
-                                        id="sellerName"
-                                    />
-                                </div>
-                                <div className="field">
-                                    <label htmlFor="listingAgent">Listing Agent</label>
-                                    <input 
-                                        type="text" 
-                                        id="listingAgent"
-                                    />
-                                </div>
-                                <div className="field">
-                                    <label htmlFor="assignee">Assigned To</label>
-                                    <input 
-                                        type="text" 
-                                        id="assignee"
-                                    />
-                                </div>
-                            </div>
-                        </fieldset>
+                    <fieldset>
+                        <legend>Milestones</legend>
+                        <div className="milestone-grid">
+                            {/* the whole box is a <label>, so clicking anywhere on it toggles the checkbox */}
+                            {MILESTONES.map(m => (
+                                <label key={m.name} className="milestone-item" htmlFor={m.name}>
+                                    <input type="checkbox" id={m.name} name={m.name} checked={deal[m.name]} onChange={handleChange} />
+                                    <span>{m.label}</span>
+                                </label>
+                            ))}
+                        </div>
+                    </fieldset>
 
-                        {/* <!-- DATES & DEADLINES --> */}
-                        <fieldset>
-                            <legend>Dates & Deadlines</legend>
-                            <div className="field-grid">
-                                <div className="field">
-                                    <label htmlFor="contractDate">Contract Date</label>
-                                    <input 
-                                        type="date" 
-                                        id="contractDate"
-                                    />
-                                </div>
-                                <div className="field">
-                                    <label htmlFor="closingDate">Closing Date</label>
-                                    <input 
-                                        type="date" 
-                                        id="closingDate"
-                                    />
-                                </div>
-                                <div className="field">
-                                    <label htmlFor="closingTime">Closing Time</label>
-                                    <input 
-                                        type="time" 
-                                        id="closingTime"
-                                    />
-                                </div>
-                                <div className="field">
-                                    <label htmlFor="emdDueDate">EMD Due Date</label>
-                                    <input 
-                                        type="date" 
-                                        id="emdDueDate"
-                                    />
-                                </div>
-                                <div className="field">
-                                    <label htmlFor="inspectionDeadline">Inspection Deadline</label>
-                                    <input 
-                                        type="date" 
-                                        id="inspectionDeadline"
-                                    />
-                                </div>
-                                <div className="field">
-                                    <label htmlFor="appraisalDeadline">Appraisal Deadline</label>
-                                    <input 
-                                        type="date" 
-                                        id="appraisalDeadline"
-                                    />
-                                </div>
-                                <div className="field">
-                                    <label htmlFor ="financingContingencyDeadline">Financing Contingency Deadline</label>
-                                    <input 
-                                        type="date" 
-                                        id="financingContingencyDeadline"
-                                    />
-                                </div>
-                            </div>
-                        </fieldset>
+                    {error && (
+                        <div className="error-banner" role="alert">
+                            <span><strong>Couldn’t save this deal.</strong> {error}</span>
+                        </div>
+                    )}
 
-                        <fieldset>
-                            <legend>Location</legend>
-                            <div className="field-grid">
-                                <div className="field">
-                                    <label htmlFor="propertyAddress">Property Address</label>
-                                    <input 
-                                        type="text" 
-                                        id="propertyAddress"
-                                    />
-                                </div>
-                                <div className="field">
-                                    <label htmlFor="closingLocation">Closing Location</label>
-                                    <input 
-                                        type="text" 
-                                        id="closingLocation"
-                                    />
-                                </div>
-                            </div>
-                        </fieldset>
+                    <div className="form-actions">
+                        <button type="submit" className="btn btn-primary" disabled={saving}>
+                            {saving ? 'Saving…' : 'Save Deal'}
+                        </button>
+                        <button type="button" className="btn btn-ghost" onClick={() => navigate('/transactions')}>
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </main>
 
-                        <fieldset>
-                            <legend>Financials</legend>
-                            <div className="field-grid">
-                                <div className="field">
-                                    <label htmlFor="purchasePrice">Purchase Price ($)</label>
-                                    <input 
-                                        type="number" 
-                                        id="purchasePrice"
-                                    />
-                                </div>
-                                <div className="field">
-                                    <label htmlFor="listingPrice">Listing Price ($)</label>
-                                    <input 
-                                        type="number" 
-                                        id="listingPrice"
-                                    />
-                                </div>
-                                <div className="field">
-                                    <label htmlFor="emdAmount">EMD Amount ($)</label>
-                                    <input 
-                                        type="number" 
-                                        id="emdAmount"
-                                    />
-                                </div>
-                            </div>
-                        </fieldset>
-
-                        <fieldset>
-                            <legend>Title & Lender</legend>
-                            <div className="field-grid">
-                                <div className="field">
-                                    <label htmlFor="titleCompanyName">Title Company Name</label>
-                                    <input 
-                                        type="text" 
-                                        id="titleCompanyName"
-                                    />
-                                </div>
-                                <div className="field">
-                                    <label htmlFor="titleCompanyContact">Title Company Contact</label>
-                                    <input 
-                                        type="text" 
-                                        id="titleCompanyContact"
-                                    />
-                                </div>
-                                <div className="field">
-                                    <label htmlFor="lenderName">Lender Name</label>
-                                    <input 
-                                        type="text" 
-                                        id="lenderName"
-                                    />
-                                </div>
-                                <div className="field">
-                                    <label htmlFor="lenderContact">Lender Contact</label>
-                                    <input 
-                                        type="text" 
-                                        id="lenderContact"
-                                    />
-                                </div>
-                            </div>
-                        </fieldset>
-
-                        <fieldset>
-                            <legend>Risk & Notes</legend>
-                            <div className="field-grid">
-                                <div className="field">
-                                    <label htmlFor="riskLevel">Risk Level</label>
-                                    <select id="riskLevel">
-                                        <option value="" default>Select Risk Level</option>
-                                        <option value="low">Low</option>
-                                        <option value="medium">Medium</option>
-                                        <option value="high">High</option>
-                                    </select>
-                                </div>
-                                <div className="field">
-                                    <label htmlFor="nextAction">Next Action</label>
-                                    <input 
-                                        type="text" 
-                                        id="nextAction"
-                                    />
-                                </div>
-                                <div className="field">
-                                    <label htmlFor="nextActionDue">Next Action Due Date</label>
-                                    <input 
-                                        type="date" 
-                                        id="nextActionDue"
-                                    />
-                                </div>
-                                <div className="field">
-                                    <label htmlFor="blocker">Blocker</label>
-                                    <input 
-                                        type="text" 
-                                        id="blocker"
-                                    />
-                                </div>
-                                <div className="field" style={{ gridColumn: 'span 2' }}>
-                                    <label htmlFor="notes">Notes</label>
-                                    <textarea id="notes"></textarea>
-                                </div>
-                            </div>
-                        </fieldset>
-
-                        <fieldset>
-                            <legend>Milestones</legend>
-                            <div className="milestone-grid">
-                                <div className="milestone-item">
-                                    <input 
-                                        type="checkbox" 
-                                        id="earnestMoneyReceived"
-                                    />
-                                    <label htmlFor="earnestMoneyReceived">Earnest Money Received</label>
-                                </div>
-                                <div className="milestone-item">
-                                    <input 
-                                        type="checkbox" 
-                                        id="inspectionComplete"
-                                    />
-                                    <label htmlFor="inspectionComplete">Inspection Complete</label>
-                                </div>
-                                <div className="milestone-item">
-                                    <input 
-                                        type="checkbox" 
-                                        id="appraisalReceived"
-                                    />
-                                    <label htmlFor="appraisalReceived">Appraisal Received</label>
-                                </div>
-                                <div className="milestone-item">
-                                    <input 
-                                        type="checkbox" 
-                                        id="titleClear"
-                                    />
-                                    <label htmlFor="titleClear">Title Clear</label>
-                                </div>
-                                <div className="milestone-item">
-                                    <input 
-                                        type="checkbox" 
-                                        id="insuranceConfirmed"
-                                    />
-                                    <label htmlFor="insuranceConfirmed">Insurance Confirmed</label>
-                                </div>
-                                <div className="milestone-item">
-                                    <input 
-                                        type="checkbox" 
-                                        id="clearToCloseConfirmed"
-                                    />
-                                    <label htmlFor="clearToCloseConfirmed">Clear to Close Confirmed</label>
-                                </div>
-                            </div>
-                        </fieldset>
-
-                        {message && <p className="error">{message}</p>}
-                        <button type="submit">Save Deal</button>
-
-                    </form>
-                </div>
-            </div>
-        </>
-    )
+            <button id="chatbot-btn" title="TC Pipeline Assistant" onClick={() => alert('Chatbot coming soon!')}>🤖</button>
+        </div>
+    );
 }
-export default NewDeal
+
+export default NewDeal;

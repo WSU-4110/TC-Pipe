@@ -1,0 +1,140 @@
+/*TC dark page*/
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* ── Tokens (colors used everywhere through var(--name)) ── */
+.tc-dark {
+    --bg:         #0d1521;
+    --surface:    #152032;
+    --surface2:   #1c2d42;
+    --border:     #243348;
+    --border2:    #2e4160;
+    --text:       #e2eaf4;
+    --muted:      #7a95b2;
+    --accent:     #3b82f6;
+    --accent-h:   #2563eb;
+    --success:    #22c55e;
+    --warning:    #f59e0b;
+    --danger:     #ef4444;
+    --nav-h:      60px;
+    color-scheme: dark;
+
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+}
+.tc-dark *, .tc-dark *::before, .tc-dark *::after { box-sizing: border-box; }
+
+/* In React every page's CSS is loaded at once, so loginStyle.css's
+   "body { display:flex; centered }" also hits this page. Undo it
+   whenever a .tc-dark page is on screen. */
+body:has(.tc-dark) {
+    display: block;
+    height: auto;
+    margin: 0;
+    background: #0d1521;
+}
+.tc-dark a { color: inherit; text-decoration: none; }
+
+/* ── Top Nav ─────────────────────────────────────────── */
+.tc-dark .top-nav {
+    position: sticky; top: 0; z-index: 100;
+    height: var(--nav-h);
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center;
+    padding: 0 24px; gap: 32px;
+}
+.tc-dark .nav-brand { font-size: 16px; font-weight: 700; color: var(--text); white-space: nowrap; letter-spacing: -0.3px; cursor: pointer; }
+.tc-dark .nav-brand span { color: var(--accent); }
+.tc-dark .nav-links { display: flex; align-items: center; gap: 4px; flex: 1; }
+.tc-dark .nav-links a {
+    padding: 6px 12px; border-radius: 6px;
+    font-size: 13.5px; font-weight: 500; color: var(--muted);
+    transition: background .15s, color .15s; white-space: nowrap; cursor: pointer;
+}
+.tc-dark .nav-links a:hover,
+.tc-dark .nav-links a.active { background: var(--surface2); color: var(--text); }
+.tc-dark .nav-right { display: flex; align-items: center; gap: 12px; margin-left: auto; }
+.tc-dark .nav-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--accent); border: 2px solid var(--border2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 600; color: #fff; overflow: hidden; flex-shrink: 0;
+}
+.tc-dark .nav-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+/* ── Page layout ─────────────────────────────────────── */
+.tc-dark #main { max-width: 1280px; margin: 0 auto; padding: 32px 24px 96px; }
+
+/* ── Stat cards ──────────────────────────────────────── */
+.tc-dark #stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.tc-dark .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; box-shadow: none; }
+.tc-dark .card h2 { font-size: 32px; font-weight: 700; color: var(--text); margin: 0 0 4px; }
+.tc-dark .card p { font-size: 13px; color: var(--muted); margin: 0; }
+.tc-dark .card small { display: block; margin-top: 6px; font-size: 12px; color: var(--muted); }
+
+/* ── Tables ──────────────────────────────────────────── */
+.tc-dark table { width: 100%; border-collapse: collapse; background: transparent; margin-bottom: 0; }
+.tc-dark th {
+    background: transparent; color: var(--muted);
+    padding: 10px 12px; text-align: left;
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+    border-bottom: 1px solid var(--border);
+}
+.tc-dark td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 14px; color: var(--text); vertical-align: top; }
+.tc-dark td, .tc-dark th { white-space: nowrap; }
+
+/* ── Inputs / filter bar ─────────────────────────────── */
+/* "#filters input" is listed too: style.css has an ID rule for it,
+   and ID selectors beat class selectors */
+.tc-dark input, .tc-dark select, .tc-dark textarea,
+.tc-dark #filters input, .tc-dark #filters select {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+    padding: 9px 12px; color: var(--text); font-family: inherit; font-size: 13.5px; outline: none;
+    width: auto; /* style.css makes every input 100% wide */
+}
+.tc-dark input:focus, .tc-dark select:focus, .tc-dark textarea:focus { border-color: var(--accent); }
+.tc-dark #filters { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+.tc-dark #filters input { flex: 1; min-width: 200px; }
+
+/* ── Buttons ─────────────────────────────────────────── */
+.tc-dark .btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 8px 16px; border-radius: 8px;
+    font-size: 13.5px; font-weight: 500; cursor: pointer; border: none; font-family: inherit;
+    transition: background .15s, opacity .15s;
+    width: auto; /* loginStyle.css makes every button 100% wide */
+}
+.tc-dark .btn-primary { background: var(--accent); color: #fff; }
+.tc-dark .btn-primary:hover { background: var(--accent-h); }
+.tc-dark .btn-ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+.tc-dark .btn-ghost:hover { background: var(--border2); }
+.tc-dark .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+/* ── Shared helpers ──────────────────────────────────── */
+/* visually hidden, but still read out by screen readers (used for form labels) */
+.tc-dark .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.tc-dark .error-banner {
+    background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.3); color: #fca5a5;
+    border-radius: 8px; padding: 12px 16px; margin-bottom: 24px;
+    display: flex; gap: 12px; align-items: center; justify-content: space-between; font-size: 14px;
+}
+
+/* ── Chatbot button ──────────────────────────────────── */
+.tc-dark #chatbot-btn {
+    position: fixed; bottom: 24px; right: 24px;
+    width: 52px; height: 52px; border-radius: 50%;
+    background: var(--accent); border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; font-size: 24px;
+    box-shadow: 0 4px 16px rgba(59,130,246,.4); z-index: 200;
+    transition: transform .2s, box-shadow .2s;
+}
+.tc-dark #chatbot-btn:hover { transform: scale(1.08); box-shadow: 0 6px 24px rgba(59,130,246,.55); }
+
+@media (max-width: 700px) {
+    .tc-dark .top-nav { gap: 12px; padding: 0 12px; overflow-x: auto; }
+    .tc-dark .nav-links a { font-size: 12.5px; padding: 6px 8px; }
+    .tc-dark #main { padding: 24px 16px 96px; }
+}

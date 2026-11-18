@@ -1,0 +1,88 @@
+/* =====================================================================
+   NEW DEAL-ONLY STYLES (moved from the <style> block in add.html)
+   Prefixed with .nd-page (the class on this page's wrapper div) so they
+   only apply here. They also beat the old light-theme fieldset / legend /
+   .field rules in style.css, which are still loaded on every page.
+   ===================================================================== */
+
+.nd-page .page-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; flex-wrap: wrap; gap: 12px; }
+.nd-page .page-head h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.4px; }
+.nd-page .page-head p { margin: 4px 0 0; font-size: 13px; color: var(--muted); }
+
+/* Form layout */
+.nd-page #dealForm { display: flex; flex-direction: column; gap: 20px; }
+
+.nd-page fieldset {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin: 0;
+}
+
+.nd-page legend {
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    padding: 0 8px;
+    margin-left: -4px;
+}
+
+.nd-page .field-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+}
+.nd-page .field.full { grid-column: 1 / -1; } /* full-width row (Notes) */
+
+.nd-page .field { display: flex; flex-direction: column; gap: 6px; }
+.nd-page .field label {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.nd-page .field input,
+.nd-page .field select,
+.nd-page .field textarea { width: 100%; }
+.nd-page .field textarea { min-height: 100px; resize: vertical; }
+.nd-page .field .hint { font-size: 12px; color: var(--muted); }
+
+/* Milestone checkboxes */
+.nd-page .milestone-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+    margin-top: 16px;
+}
+.nd-page .milestone-item {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: border-color 0.15s;
+    text-align: left;
+}
+.nd-page .milestone-item:hover { border-color: var(--border2); }
+.nd-page .milestone-item input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    accent-color: var(--accent);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+.nd-page .milestone-item span { font-size: 13.5px; font-weight: 500; color: var(--text); }
+
+/* Form actions */
+.nd-page .form-actions { display: flex; gap: 12px; padding: 4px 0 24px; }
+.nd-page .form-actions .btn { margin-top: 0; }

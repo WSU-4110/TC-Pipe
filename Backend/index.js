@@ -215,6 +215,10 @@ app.get('/transactions', authenticateToken, (req, res) => {
     });
 });
 
+// TODO: create get and post method for edit transaction button
+// TODO: create get method for view transaction button
+// TODO: create post method for delete transaction button
+
 
 // ===== DASHBOARD PAGE ===== ///
 app.post('/dashboard', authenticateToken, (req, res) => {
@@ -287,18 +291,53 @@ app.post('/newDeal', authenticateToken, async (req, res) => {
 
 
 // ===== Settings Page ===== ///
-app.post('/settings', authenticateToken, (req, res) => {
-    const userJWT = req.user.userID;
-    const { email, username, password, linkedIN, phoneNumber, brokerageORcompany, titleORrole } = req.body;
+// load the logged-in user's profile (never the password)
+app.get('/settings', authenticateToken, async (req, res) => {
+    try {
+        const [rows] = await db.promise().query(
+            `SELECT username, email, firstname, lastname, phoneNumber, linkedIN, brokerageORcompany, titleORrole
+             FROM users WHERE privateID = ?`,
+            [req.user.userID]
+        );
+        if (!rows.length) return res.status(404).json({ error: 'User not found' });
+        res.json(rows[0]);
+    } catch (err) {
+        console.error('Error loading user settings:', err);
+        res.status(500).json({ error: 'Internal server error (settings)' });
+    }
+});
 
-    db.query('UPDATE users SET email = ?, username = ?, password = ?, linkedIN = ?, phoneNumber = ?, brokerageORcompany = ?, titleORrole = ? WHERE privateID = ?',
-        [email, username, password, linkedIN, phoneNumber, brokerageORcompany, titleORrole, userJWT], (err, results) => {
-            if (err) {
-                console.error('Error updating user settings:', err);
-                return res.status(500).json({ error: 'Internal server error (settings)' });
-            }
-            res.json({ message: 'User settings updated successfully' });
-        });
+// update the profile fields only. Username and password are NOT changed here
+// (a password change should be its own form that checks the old password and bcrypt-hashes the new one)
+app.post('/settings', authenticateToken, async (req, res) => {
+    const { email, firstname, lastname, linkedIN, phoneNumber, brokerageORcompany, titleORrole } = req.body;
+
+    if (!email || !firstname) {
+        return res.status(400).json({ error: 'Name and email are required' });
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return res.status(400).json({ error: 'Invalid email format' });
+    }
+    if (linkedIN && !/^(https?:\/\/)?(www\.)?linkedin\.com\/.*$/.test(linkedIN)) {
+        return res.status(400).json({ error: 'Invalid LinkedIn URL' });
+    }
+
+    try {
+        await db.promise().query(
+            `UPDATE users SET email = ?, firstname = ?, lastname = ?, linkedIN = ?, phoneNumber = ?,
+                              brokerageORcompany = ?, titleORrole = ?
+             WHERE privateID = ?`,
+            [email, firstname, lastname || '', linkedIN || '', phoneNumber || null,
+             brokerageORcompany || '', titleORrole || '', req.user.userID]
+        );
+        res.json({ message: 'User settings updated successfully' });
+    } catch (err) {
+        if (err.code === 'ER_DUP_ENTRY') {
+            return res.status(409).json({ error: 'That email is already used by another account' });
+        }
+        console.error('Error updating user settings:', err);
+        res.status(500).json({ error: 'Internal server error (settings)' });
+    }
 });
 
 // ===== Start the server ===== ///
