@@ -1,6 +1,5 @@
 // localStorage helpers (still used for settings)
 const API_BASE = 'http://tc-pipeline-env.eba-ugimqn2k.us-east-2.elasticbeanstalk.com';
-
 function saveData(key, value) {
     localStorage.setItem(key, JSON.stringify(value));
 }
@@ -72,7 +71,7 @@ async function apiPost(transaction) {
 async function apiPut(transaction) {
     // sends an updated transaction to the server (UPDATE)
     const response = await fetch(`${API_BASE}/api/transactions`, {
-        method: 'PUT', // PUT tells server this is an update, not a new insert
+        method: 'PUT', // PUT tells PHP this is an update, not a new insert
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(transaction)
     });
@@ -82,7 +81,7 @@ async function apiPut(transaction) {
 async function apiDelete(fileID) {
     // tells server to delete a transaction by File ID
     const response = await fetch(`${API_BASE}/api/transactions?fileID=` + fileID, {
-        method: 'DELETE' // DELETE tells server to remove the record
+        method: 'DELETE' // DELETE tells PHP to remove the record
     });
     return await response.json();
 }

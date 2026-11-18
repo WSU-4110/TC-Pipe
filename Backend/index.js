@@ -1,8 +1,16 @@
-
 const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const mysql = require('mysql2');
+
+const multer = require('multer');
+const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+
+const s3 = new S3Client({ region: 'us-east-2' });
+const S3_BUCKET = 'tc-pipeline-assets';
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
+
+// ---------- config ----------
 const dotenv = require('dotenv');
 const jwt = require('jsonwebtoken');
 const { nanoid, customAlphabet } = require('nanoid');
@@ -155,18 +163,61 @@ app.post('/register', (req, res) => {
         return res.status(400).json({ error: 'Invalid phone number format' });
     }
 
-    // -- password strength validation -- //
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-    if (!passwordRegex.test(password)) {
-        return res.status(400).json({ error: 'Password must be at least 8 characters long and include uppercase, lowercase, number, and special character' });
-    }
+    // 2) initialize the singleton pool — connects to the database.
+    //    dateStrings:true makes DATE columns come back as "2026-08-04" text,
+    //    which is what the frontend and the <input type="date"> boxes expect.
+    DatabasePool.getInstance().initialize({
+        host: DB.host, port: DB.port, user: DB.user, password: DB.password, database: DB.database,
+        connectionLimit: 10, dateStrings: true, charset: 'UTF8MB4_GENERAL_CI'
+    });
 
-    // If all validations pass, insert the new user into the database
-    // Insert the new user
-    db.query('INSERT INTO users (publicID, username, password, email, firstname, lastname, phoneNumber, linkedIn, brokerageORcompany, titleORrole) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [nanoid(), username, password, email, firstname, lastname, phoneNumber, linkedIn, brokerageORcompany, titleORrole], (err, results) => {
-        if (err) {
-            console.error('Error creating user:', err);
-            return res.status(500).json({ error: 'Internal server error' });
+    // 3) make sure the table exists
+    await query(createTableSql());
+    await query(createUserTableSql());
+}
+
+// ---------- cleaning data on the way in ----------
+
+class ValidationError extends Error {
+    constructor(message) { super(message); this.status = 400; }
+}
+
+// "" and MySQL's "0000-00-00" both mean "no date". They're stored as NULL, which is what
+// the old "NaN days" problem on the dashboard came from.
+function isBlankDate(v) {
+    if (v == null) return true;
+    const s = String(v).trim();
+    return s === '' || /^0000-00-00/.test(s);
+}
+
+function isRealDate(s) {
+    const [y, m, d] = s.split('-').map(Number);
+    const dt = new Date(Date.UTC(y, m - 1, d));
+    return y >= 1900 && dt.getUTCFullYear() === y && dt.getUTCMonth() === m - 1 && dt.getUTCDate() === d;
+}
+
+function cleanValue(col, v) {
+    switch (col.type) {
+        case 'text': {
+            if (v == null) return null;
+            const s = String(v).trim();
+            if (s === '') return null;
+            if (s.length > col.max) throw new ValidationError(col.name + ' is too long (max ' + col.max + ' characters).');
+            return s;
+        }
+        case 'date': {
+            if (isBlankDate(v)) return null;
+            const s = String(v).trim();
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(s) || !isRealDate(s)) {
+                throw new ValidationError(col.name + ' must be a valid date like 2026-08-04.');
+            }
+            return s;
+        }
+        case 'time': {
+            if (v == null || String(v).trim() === '') return null;
+            const m = /^([01]\d|2[0-3]):([0-5]\d)(?::([0-5]\d))?$/.exec(String(v).trim());
+            if (!m) throw new ValidationError(col.name + ' must be a valid time like 14:30.');
+            return m[1] + ':' + m[2] + ':' + (m[3] || '00');
         }
         res.status(201).json({ message: 'User created successfully' });
     });
@@ -229,6 +280,51 @@ app.post('/transactions', authenticateToken, (req, res) => {
 
 //TODO: Transaction Creation 
 
+// GET /api/user — load profile (creates default record on first visit)
+app.get('/api/user', async (req, res) => {
+    try {
+        let rows = await query('SELECT * FROM users WHERE userID = ?', ['default']);
+        if (rows.length === 0) {
+            await query('INSERT INTO users (userID) VALUES (?)', ['default']);
+            rows = await query('SELECT * FROM users WHERE userID = ?', ['default']);
+        }
+        res.json(rows[0]);
+    } catch (err) {
+        console.error('GET /api/user error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// PUT /api/user — update profile fields
+app.put('/api/user', async (req, res) => {
+    try {
+        const ALL_FIELDS = [
+            'fullName','email','phone','company','role','linkedInUrl',
+            'defaultTitleCompany','defaultTitleContact','defaultLender',
+            'defaultLenderContact','defaultAssignedTo',
+            'emailNotifications','deadlineReminderDays','profilePicUrl'
+        ];
+        const data = req.body;
+        const fields = ALL_FIELDS.filter(f => Object.prototype.hasOwnProperty.call(data, f));
+        if (fields.length === 0) return res.json({ success: true });
+
+        const setClauses = fields.map(f => `${f} = ?`).join(', ');
+        const values = fields.map(f => data[f] !== undefined ? data[f] : null);
+
+        await query(
+            `INSERT INTO users (userID, ${fields.join(', ')}) VALUES ('default', ${fields.map(() => '?').join(', ')})
+             ON DUPLICATE KEY UPDATE ${setClauses}`,
+            [...values, ...values]
+        );
+        res.json({ success: true });
+    } catch (err) {
+        console.error('PUT /api/user error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Anything else under /api is a JSON 404 instead of an HTML error page.
+app.use('/api', (req, res) => res.status(404).json({ success: false, error: 'Not found.' }));
 
 // ===== DASHBOARD PAGE ===== ///
 app.post('/dashboard', authenticateToken, (req, res) => {
@@ -321,20 +417,30 @@ app.post('/newDeal', authenticateToken, (req, res) => {
         });
 });
 
+// ---------- start ----------
 
+function explainStartupError(err) {
+    switch (err.code) {
+        case 'ECONNREFUSED':
+            return 'MySQL isn’t reachable at ' + DB.host + ':' + DB.port + '. Is the MySQL server running?';
+        case 'ER_ACCESS_DENIED_ERROR':
+            return 'MySQL rejected the login. Check DB_USER and DB_PASSWORD (currently user "' + DB.user + '").';
+        case 'ER_NOT_SUPPORTED_AUTH_MODE':
+            return 'The "mysql" package can’t use MySQL 8’s default login method. Either run\n' +
+                   '  ALTER USER \'' + DB.user + '\'@\'localhost\' IDENTIFIED WITH mysql_native_password BY \'your_password\';\n' +
+                   'in MySQL, or switch the backend to the "mysql2" package.';
+        default:
+            return err.message;
+    }
+}
 
-// ===== Settings Page ===== ///
-app.post('/settings', authenticateToken, (req, res) => {
-    const userJWT = req.user.userID;
-    const { email, username, password, linkedIN, phoneNumber, brokerageORcompany, titleORrole } = req.body;
-
-    db.query('UPDATE users SET email = ?, username = ?, password = ?, linkedIN = ?, phoneNumber = ?, brokerageORcompany = ?, titleORrole = ? WHERE privateID = ?',
-        [email, username, password, linkedIN, phoneNumber, brokerageORcompany, titleORrole, userJWT], (err, results) => {
-            if (err) {
-                console.error('Error updating user settings:', err);
-                return res.status(500).json({ error: 'Internal server error' });
-            }
-            res.json({ message: 'User settings updated successfully' });
+initDatabase()
+    .then(() => {
+        app.listen(PORT, () => {
+            console.log('TC Pipeline API running at http://localhost:' + PORT + '/api/transactions.php');
+            console.log('Database: ' + DB.database + ' on ' + DB.host + ':' + DB.port);
+            if (FRONTEND_DIR) console.log('Frontend: http://localhost:' + PORT + '/index.html  (serving ' + FRONTEND_DIR + ')');
+            else console.log('Frontend not served. Set FRONTEND_DIR to the folder with index.html to serve it from here.');
         });
 });
 
