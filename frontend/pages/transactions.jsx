@@ -5,34 +5,66 @@ import * as appScript from "./scripts/app.js";
 
 function transactions() {
     // ======================== ATTRIBUTES ========================= //
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
     // navigation hook
     const navigate = useNavigate();
     // use states
     const [searchTerm, setSearchTerm] = useState('');
     const [stageFilter, setStageFilter] = useState('');
     const [riskFilter, setRiskFilter] = useState('');
+    const [transactions, setTransactions] = useState([]);
 
-    // ======================== RENDER TRANSACTIONS TABLE ========================= //
-    appScript.renderTransactions(searchTerm, stageFilter, riskFilter);
+    const [loading, setLoading] = useState(true);
+
+    // ======================== LOAD TRANSACTIONS FROM BACKEND ========================= //
+    // useEffect with [] runs ONCE when the page first opens
+    useEffect(() => {
+        const currentTransactions = async () => {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                navigate('/login');
+                return;
+            }
+            try {
+                const response = await fetch(`${API_URL}/transactions`, {
+                    method: 'GET',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.status === 401 || response.status === 403) {
+                    localStorage.removeItem('token');
+                    navigate('/login');
+                    return;
+                }
+                const data = await response.json();
+                setTransactions(data); // saving to state makes React re-draw the table
+            } catch (error) {
+                console.error('Error fetching transactions:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        currentTransactions();
+    }, []);
+
+    // ======================== FILTERS ========================= //
+    // no extra fetching needed: every time a filter state changes, React re-runs
+    // this function and recalculates the visible rows from the data we already have
+    const visibleTransactions = transactions.filter(t => {
+        const search = searchTerm.toLowerCase();
+        const matchesSearch = !search ||
+            (t.fileID || '').toLowerCase().includes(search) ||
+            (t.address || '').toLowerCase().includes(search);
+        const matchesStage = !stageFilter || t.stage === stageFilter;
+        const risk = t.riskLevel || appScript.autoRisk(t);
+        const matchesRisk = !riskFilter || (risk || '').toLowerCase() === riskFilter;
+        return matchesSearch && matchesStage && matchesRisk;
+    });
 
     // ======================== HANDLE FILTER CHANGES ========================= //
-    // Change the search term
-    function changeSearchTerm(event) {
-        setSearchTerm(event.target.value);
-        appScript.renderTransactions(event.target.value, stageFilter, riskFilter);
-    }
-
-    // Change the filter by risk
-    function changeRiskFilter(event) {
-        setRiskFilter(event.target.value);
-        appScript.renderTransactions(searchTerm, stageFilter, event.target.value);
-    }
-
-    // Change the filter by stages
-    function changeStageFilter(event) {
-        setStageFilter(event.target.value);
-        appScript.renderTransactions(searchTerm, event.target.value, riskFilter);
-    }
+    const changeSearchTerm = (event) => setSearchTerm(event.target.value);
+    const changeRiskFilter = (event) => setRiskFilter(event.target.value);
+    const changeStageFilter = (event) => setStageFilter(event.target.value);
 
     // ======================== LOGOUT ========================= //
     const logout = () => {
@@ -94,7 +126,30 @@ function transactions() {
                             </tr>
                             </tbody>
                             <tbody id="transactionTableBody">
-                            {/* populated after a transaction is submitted */}
+                            {loading ? (
+                                <tr><td colSpan="7" style={{ textAlign: 'center' }}>Loading transactions...</td></tr>
+                            ) : visibleTransactions.length === 0 ? (
+                                <tr><td colSpan="7" style={{ textAlign: 'center' }}>No transactions found.</td></tr>
+                            ) : (
+                                // .map() turns each transaction object into one table row
+                                visibleTransactions.map(t => {
+                                    const risk = t.riskLevel || appScript.autoRisk(t);
+                                    const riskClass = /high/i.test(risk) ? 'risk-high' : /medium/i.test(risk) ? 'risk-medium' : 'risk-low';
+                                    return (
+                                        <tr key={t.fileID}>
+                                            <td>{t.fileID}</td>
+                                            <td>{t.address || '—'}</td>
+                                            <td>{t.stage || '—'}</td>
+                                            <td>{t.closingDate || '—'}</td>
+                                            <td>{appScript.daysToClose(t.closingDate)}</td>
+                                            <td className={riskClass}>{risk}</td>
+                                            <td>
+                                                <a href="#" onClick={(e) => { e.preventDefault(); appScript.openComposer(t.fileID); }}>Email</a>
+                                            </td>
+                                        </tr>
+                                    );
+                                })
+                            )}
                             </tbody>
                         </table>
                     </div>

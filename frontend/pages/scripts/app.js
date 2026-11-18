@@ -36,13 +36,14 @@ export function saveSettings(e) {
 * @param {string} riskFilter - The risk level to filter transactions by.
 * @returns {void} - Asynchronously renders the transactions table.
 */
-export async function renderTransactions(filter = '') {
+export async function renderTransactions(transactions = [], filter = '', stageFilter = '', riskFilter = '') {
     // filter defaults to empty string so the function works with or without a search term
     const tbody = document.getElementById('transactionTableBody');
     if (!tbody) return; // exits early if the table doesn't exist on this page
 
-    let transactions = await getTransactions();
-    // await here waits for the API response before trying to display anything
+    // use the list passed in, or fetch it if none was given
+    // (can't write "let transactions" here: that name is already the parameter)
+    if (!transactions.length) transactions = await getTransactions();
 
     // apply search filter
     if (filter) {
@@ -55,16 +56,16 @@ export async function renderTransactions(filter = '') {
     }
 
     // apply stage filter
-    const stageFilter = document.getElementById('stageFilter');
-    if (stageFilter && stageFilter.value) {
-        transactions = transactions.filter(t => t.stage === stageFilter.value);
+    // const stageFilter = document.getElementById('stageFilter');
+    if (stageFilter) {
+        transactions = transactions.filter(t => t.stage === stageFilter);
     }
 
     // apply risk filter
-    const riskFilter = document.getElementById('riskFilter');
-    if (riskFilter && riskFilter.value) {
+    // const riskFilter = document.getElementById('riskFilter');
+    if (riskFilter) {
         transactions = transactions.filter(t =>
-            (t.riskLevel || autoRisk(t)).toLowerCase() === riskFilter.value
+            (t.riskLevel || autoRisk(t)).toLowerCase() === riskFilter
         );
     }
 
@@ -161,10 +162,34 @@ export function loadData(key) {
 
 // Transaction API (async talks to PHP backend now)
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
 export async function getTransactions() {
-    const response = await fetch('api/transactions.php');
+    // the token tells the backend which user's transactions to return
+    const token = localStorage.getItem('token');
+    if (!token) {
+        window.location.href = '/login';
+        return [];
+    }
+
+    const response = await fetch(`${API_URL}/transactions`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+
+    if (response.status === 401 || response.status === 403) {
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+        return [];
+    }
+    if (!response.ok) return [];
+
     const data = await response.json();
-    return data;
+    // the database column is "address", but the rest of this file uses "propertyAddress"
+    return data.map(t => ({ ...t, propertyAddress: t.address || '' }));
 }
 // async marks the function as asynchronous... it can use await inside
 // fetch() sends a GET request to our php api

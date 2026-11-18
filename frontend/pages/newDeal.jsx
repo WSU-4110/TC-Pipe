@@ -30,12 +30,105 @@ function NewDeal() {
     }
 
     // add new transaction to the database when form is submitted
-    const handleSubmit = (e) => {
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+    const [message, setMessage] = useState('');
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
-        console.log("sending data to SQL database: ", formData);
+        // grab input data
+        const f = e.target.elements;
+        const deal = {
+            // ----- BASIC INFO ----- //
+            fileID: f.fileID.value,
+            side: f.side.value,
+            propertyType: f.propertyType.value,
+            transactionType: f.transactionType.value,
+            stage: f.stage.value,
+            MLSNumber: f.mlsNumber.value,
+            
+            // ----- PARTIES ----- //
+            buyerName: f.buyerName.value,
+            sellerName: f.sellerName.value,
+            listingAgent: f.listingAgent.value,
+            assignedTo: f.assignee.value,
 
-        // enter the fetch and post request to the backend here to send the formData to the SQL database
+            // ----- DATES & DEADLINES ----- //
+            contractDate: f.contractDate.value,
+            closingDate: f.closingDate.value,
+            closingTime: f.closingTime.value,
+            EMDdueDate: f.emdDueDate.value,
+            inspectionDeadline: f.inspectionDeadline.value,
+            appraisalDeadline: f.appraisalDeadline.value,
+            financingContingencyDeadline: f.financingContingencyDeadline.value,
+
+            // ----- LOCATION ----- //
+            address: f.propertyAddress.value,
+            closingLocation: f.closingLocation.value,
+
+            // ----- FINANCIALS ----- //
+            purchasePrice: f.purchasePrice.value,
+            listingPrice: f.listingPrice.value,
+            EMDamount: f.emdAmount.value,
+
+            // ----- TITLE & LENDER ----- //
+            titleCompanyName: f.titleCompanyName.value,
+            titleCompanyContact: f.titleCompanyContact.value,
+            lenderName: f.lenderName.value,
+            lenderContact: f.lenderContact.value,
+
+            // ----- RISK & NOTES ----- //
+            riskLevel: f.riskLevel.value,
+            nextAction: f.nextAction.value,
+            nextActionDue: f.nextActionDue.value,
+            blocker: f.blocker.value,
+            notes: f.notes.value,
+
+            // ---- MILESTONES ----- //
+            earnestMoneyReceived: f.earnestMoneyReceived.checked,
+            inspectionComplete: f.inspectionComplete.checked,
+            appraisalReceived: f.appraisalReceived.checked,
+            titleClear: f.titleClear.checked,
+            insuranceConfirmed: f.insuranceConfirmed.checked,
+            clearToCloseConfirmed: f.clearToCloseConfirmed.checked,
+        };
+
+        // check which user this is
+        const token = localStorage.getItem('token');
+        if (!token) {
+            navigate('/login');
+            return;
+        }
+
+        // send the data to the backend to save it in the database
+        try {
+            const response = await fetch(`${API_URL}/newDeal`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: JSON.stringify(deal),
+            });
+
+            if (response.status === 401 || response.status === 403) {
+                localStorage.removeItem('token');
+                navigate('/login');
+                return;
+            }
+
+            const data = await response.json();
+            if (!response.ok) {
+                setMessage(data.error || 'Could not save deal.');
+                return;
+            }
+
+            // 4. Saved! Go to the transactions page, which reloads this user's deals
+            navigate('/transactions');
+        } catch (err) {
+            console.error('Error saving deal:', err);
+            setMessage('Could not reach the server.');
+        }
     }
 
 
@@ -70,9 +163,10 @@ function NewDeal() {
                                     <input 
                                         type="text" 
                                         id="fileID"
+                                        name="fileID"
                                         value={formData.fileID}
                                         onChange={handleChange}
-                                        placeholder="Enter File ID"
+                                        placeholder="Leave blank to auto-generate"
                                     />
                                 </div>
                                 <div className="field">
@@ -388,6 +482,7 @@ function NewDeal() {
                             </div>
                         </fieldset>
 
+                        {message && <p className="error">{message}</p>}
                         <button type="submit">Save Deal</button>
 
                     </form>

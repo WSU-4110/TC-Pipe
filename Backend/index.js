@@ -29,7 +29,8 @@ const db = mysql.createPool({
     port: API_PORT,
     user: USER,
     password: PASSWORD,
-    database: DATABASE
+    database: DATABASE,
+    dateStrings: true // return DATE columns as 'YYYY-MM-DD' strings instead of JS Dates (avoids timezone shifts)
 });
 
 const createDatabaseIfNotExists = () => {
@@ -49,7 +50,8 @@ const createDatabaseIfNotExists = () => {
     );
 
     db.query(`CREATE TABLE IF NOT EXISTS transactions (
-        userID INT NOT NULL PRIMARY KEY,
+        transactionID INT AUTO_INCREMENT PRIMARY KEY,
+        userID INT NOT NULL,
         fileID VARCHAR(50) NOT NULL UNIQUE,
         
         closingsThisWeek INT,
@@ -142,7 +144,7 @@ app.post('/register', async (req, res) => {
                                 phoneNumber, linkedIN, brokerageORcompany, titleORrole)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [nanoid(), username, hash, email, firstname, lastname,
-             phoneNumber || 9999999999, linkedIn || '', brokerageORcompany || '', titleORrole || '']
+             phoneNumber, linkedIn || '', brokerageORcompany || '', titleORrole || '']
         );
         const token = jwt.sign({ userID: result.insertId }, process.env.JWT_SECRET, { expiresIn: '24h' });
         console.log('flag: user created successfully');
@@ -205,7 +207,17 @@ app.post('/transactions', authenticateToken, (req, res) => {
     });
 });
 
-//TODO: Transaction Creation 
+app.get('/transactions', authenticateToken, (req, res) => {
+    const userJWT = req.user.userID;
+
+    db.query('SELECT * FROM transactions WHERE userID = ?', [userJWT], (err, results) => {
+        if (err) {
+            console.error('Error fetching transactions:', err);
+            return res.status(500).json({ error: 'Internal server error (transactions page)' });
+        }
+        res.json(results);
+    });
+});
 
 
 // ===== DASHBOARD PAGE ===== ///
@@ -223,80 +235,57 @@ app.post('/dashboard', authenticateToken, (req, res) => {
 })
 
 // ===== New Deal ===== ///
-app.post('/newDeal', authenticateToken, (req, res) => {
+// The token tells us WHO is adding the deal (req.user.userID), so the deal is
+// always saved under the logged-in user, never under an ID the browser sends.
+app.post('/newDeal', authenticateToken, async (req, res) => {
     const userJWT = req.user.userID;
-    // Generate a new fileID for the transaction
+
+    // Generate a fileID like 26_11_17-TC-AB12CD if the user left File ID blank
     const generateFileID = () => {
-        const generatedFileID = `TC-${generateFileIDKey()}`;
         const datePrefix = new Date().toISOString().slice(2, 10).replace(/-/g, '_');
-        const finalFileID = `${datePrefix}-${generatedFileID}`;
-    return finalFileID;
+        return `${datePrefix}-TC-${generateFileIDKey()}`;
+    };
+
+    // Only these columns may be filled in from the form (whitelist)
+    const allowedFields = [
+        'side', 'propertyType', 'transactionType', 'stage', 'MLSNumber',
+        'buyerName', 'sellerName', 'listingAgent', 'assignedTo',
+        'contractDate', 'closingDate', 'closingTime', 'EMDdueDate', 'inspectionDeadline',
+        'appraisalDeadline', 'financingContingencyDeadline',
+        'address', 'closingLocation',
+        'purchasePrice', 'listingPrice', 'EMDamount',
+        'titleCompanyName', 'titleCompanyContact', 'lenderName', 'lenderContact',
+        'riskLevel', 'nextAction', 'nextActionDue', 'blocker', 'notes'
+    ];
+    const milestoneFields = [
+        'earnestMoneyReceived', 'inspectionComplete', 'appraisalReceived',
+        'titleClear', 'insuranceConfirmed', 'clearToCloseConfirmed'
+    ];
+
+    // Build { columnName: value } for the INSERT; empty strings become NULL
+    // (MySQL rejects '' for DATE / DECIMAL columns)
+    const fileID = (req.body.fileID || '').trim() || generateFileID();
+    const newDeal = { userID: userJWT, fileID };
+    for (const field of allowedFields) {
+        const value = req.body[field];
+        newDeal[field] = (value === '' || value === undefined) ? null : value;
     }
-    const newFileID = generateFileID();
-    const { 
-        fileID = newFileID,
-        // ===== Transaction info ===== ///
-        // Basic info   
-        side, 
-        propertyType, 
-        transactionType, 
-        stage,
-        MLSNumber,
+    for (const field of milestoneFields) {
+        newDeal[field] = req.body[field] ? 1 : 0;
+    }
 
-        // Parties involved
-        buyerName, 
-        sellerName, 
-        listingAgent, 
-        assignedTo,
-
-        // Dates and deadlines
-        contractDate, 
-        closingDate,
-        closingTime,
-        EMDdueDate, 
-        inspectionDeadline, 
-        appraisalDeadline, 
-        financingContingencyDeadline,
-
-        // Location
-        address, 
-        closingLocation,
-
-        // Financials
-        purchasePrice, 
-        listingPrice, 
-        EMDamount,
-
-        // Title and Lender info
-        titleCompanyName, 
-        titleCompanyContact, 
-        lenderName, 
-        lenderContact,
-        
-        // Risk and Notes
-        riskLevel, 
-        nextAction, 
-        nextActionDue, 
-        blocker, 
-        notes,
-
-        // milestone flags
-        earnestMoneyReceived, 
-        inspectionComplete,
-        appraisalReceived,
-        titleClear, 
-        insuranceConfirmed, 
-        clearToCloseConfirmed } = req.body;
-
-        // add new transaction to the database
-        db.query('INSERT INTO transactions (userID, fileID, side, propertyType, transactionType, stage, MLSNumber, buyerName, sellerName, listingAgent, assignedTo, contractDate, closingDate, closingTime, EMDdueDate, inspectionDeadline, appraisalDeadline, financingContingencyDeadline, address, closingLocation, purchasePrice, listingPrice, EMDamount, titleCompanyName, titleCompanyContact, lenderName, lenderContact, riskLevel, nextAction, nextActionDue, blocker, notes, earnestMoneyReceived, inspectionComplete, appraisalReceived, titleClear, insuranceConfirmed, clearToCloseConfirmed) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        [userJWT, newFileID, side, propertyType, transactionType, stage, MLSNumber, buyerName, sellerName, listingAgent, assignedTo, contractDate, closingDate, closingTime, EMDdueDate, inspectionDeadline, appraisalDeadline, financingContingencyDeadline, address, closingLocation, purchasePrice, listingPrice, EMDamount, titleCompanyName, titleCompanyContact, lenderName, lenderContact, riskLevel, nextAction, nextActionDue, blocker, notes, earnestMoneyReceived ? 1 : 0, inspectionComplete ? 1 : 0, appraisalReceived ? 1 : 0, titleClear ? 1 : 0, insuranceConfirmed ? 1 : 0, clearToCloseConfirmed ? 1 : 0], (err) => {
-            if (err) {
-                console.error('Error creating new deal:', err);
-                return res.status(500).json({ error: 'Internal server error (new Deal)' });
-            }
-            res.status(201).json({ message: 'New deal created successfully', fileID: newFileID });
-        });
+    try {
+        // "INSERT ... SET ?" lets mysql2 turn the object into `col1 = ?, col2 = ?, ...`
+        // so the column list and values can never get out of sync
+        await db.promise().query('INSERT INTO transactions SET ?', [newDeal]);
+        res.status(201).json({ message: 'New deal created successfully', fileID });
+    } catch (err) {
+        if (err.code === 'ER_DUP_ENTRY') {
+            return res.status(409).json({ error: `File ID ${fileID} already exists` });
+        }
+        console.error('Error creating new deal:', err);
+        res.status(500).json({ error: 'Internal server error (new Deal)' });
+    }
 });
 
 
