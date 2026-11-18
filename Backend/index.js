@@ -269,9 +269,8 @@ app.put('/transactions/:fileID', authenticateToken, async (req, res) => {
     }
 });
 
-// (View doesn't need its own route: GET /transactions already sends every field.)
 // ----- Delete transaction ----- //
-// Removes one deal. Like edit, "AND userID = ?" means you can only delete YOUR deals.
+// removes a transaction
 app.delete('/transactions/:fileID', authenticateToken, async (req, res) => {
     try {
         const [result] = await db.promise().query(
