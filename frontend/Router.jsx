@@ -9,6 +9,8 @@ import Transactions from './pages/transactions';
 import Registration from './pages/registration';
 import Settings from './pages/settings';
 import Help from './pages/help';
+import Assistant from './pages/components/Assistant';
+
 
 function App() {
   return (
@@ -26,6 +28,9 @@ function App() {
         <Route path="/settings" element={<Settings />} />
         <Route path="/help" element={<Help />} />
       </Routes>
+      <div className="tc-dark">
+    <Assistant />
+      </div>  
     </Router>
   );
 }

@@ -302,7 +302,6 @@ function Settings() {
                 {toast.message}
             </div>
 
-            <button id="chatbot-btn" title="TC Pipeline Assistant" onClick={() => alert('Chatbot coming soon!')}>🤖</button>
         </div>
     );
 }

@@ -424,7 +424,7 @@ function Dashboard() {
             </main>
 
             {/* Chatbot button */}
-            <button id="chatbot-btn" title="TC Pipeline Assistant" onClick={() => alert('Chatbot coming soon!')}>🤖</button>
+            
         </div>
     );
 }

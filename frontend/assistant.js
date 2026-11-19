@@ -15,8 +15,8 @@
 (function () {
     'use strict';
 
-    const USE_LOCAL = true;
-    const ASSISTANT_URL = 'api/assistant';
+    const USE_LOCAL = false;
+    const ASSISTANT_URL = 'http://tc-pipeline-env.eba-ugimqn2k.us-east-2.elasticbeanstalk.com/assistant';
     const STORE_KEY = 'tcAssistant';
     const MAX_HISTORY = 40;     // messages kept in the browser
     const SEND_HISTORY = 10;    // messages sent to the server for context
@@ -186,7 +186,9 @@
         async reply(message, context) {
             const res = await fetch(this.url, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('token') || '')
+                 },
                 body: JSON.stringify({
                     message: message,
                     page: context.page,
