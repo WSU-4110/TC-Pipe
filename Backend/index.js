@@ -7,6 +7,7 @@ const dotenv = require('dotenv');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const { nanoid, customAlphabet } = require('nanoid');
+const createAssistant = require('./assistant'); // chatbot route (see Backend/assistant.js)
 
 dotenv.config({path: path.join(__dirname, 'server.env')});
 
@@ -391,6 +392,10 @@ app.post('/settings', authenticateToken, async (req, res) => {
         res.status(500).json({ error: 'Internal server error (settings)' });
     }
 });
+
+// ===== Chatbot ===== ///
+// POST /assistant answers help questions (needs the login token like the other routes)
+app.use('/assistant', createAssistant({ authenticateToken }).router);
 
 // ===== Start the server ===== ///
 app.listen(PORT, () => { 

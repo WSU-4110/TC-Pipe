@@ -4,6 +4,7 @@ import "./styleSheets/style.css";
 import "./styleSheets/theme.css";
 import "./styleSheets/newDeal.css";
 import TopNav from "./components/TopNav.jsx";
+import Assistant from "./components/Assistant.jsx";
 import { loadData } from "./scripts/app.js";
 
 // ======================== FORM FIELDS (as data) ========================= //
@@ -262,7 +263,7 @@ function NewDeal() {
                 </form>
             </main>
 
-            <button id="chatbot-btn" title="TC Pipeline Assistant" onClick={() => alert('Chatbot coming soon!')}>🤖</button>
+            <Assistant />
         </div>
     );
 }
