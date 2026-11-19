@@ -7,11 +7,10 @@ const dotenv = require('dotenv');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const { nanoid, customAlphabet } = require('nanoid');
-const createAssistant = require('./assistant'); // chatbot route (see Backend/assistant.js)
+const createAssistant = require('./assistant');
+dotenv.config();
 
-dotenv.config({path: path.join(__dirname, 'server.env')});
-
-app = express();
+const app = express();
 app.use(cors());
 app.use(express.json());
 
@@ -22,7 +21,8 @@ const PORT = process.env.PORT;
 const HOST = process.env.DB_HOST;
 const USER = process.env.DB_USER;
 const PASSWORD = process.env.DB_PASSWORD;
-const DATABASE = process.env.DB_DATABASE;
+const DATABASE = process.env.DB_NAME || process.env.DB_DATABASE;
+
 
 // ===== CONFIGURATION ===== ///
 const db = mysql.createPool({
