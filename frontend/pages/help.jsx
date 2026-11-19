@@ -5,6 +5,7 @@ import "./styleSheets/theme.css";
 import "./styleSheets/help.css";
 import TopNav from "./components/TopNav.jsx";
 
+import Assistant from "./components/Assistant.jsx";
 // ======================== HELP CONTENT (as data) ========================= //
 // Each topic is { title, body }. The body is JSX, so it can hold lists and
 // <Link>s. <Link to="/settings"> moves between pages without reloading the app
@@ -365,6 +366,7 @@ function Help() {
                 )}
             </main>
 
+            <Assistant />
         </div>
     );
 }

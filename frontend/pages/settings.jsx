@@ -4,6 +4,7 @@ import "./styleSheets/style.css";
 import "./styleSheets/theme.css";
 import "./styleSheets/settings.css";
 import TopNav from "./components/TopNav.jsx";
+import Assistant from "./components/Assistant.jsx";
 import { loadData, saveData } from "./scripts/app.js";
 
 // ======================== FIELDS (as data, like newDeal.jsx) ========================= //
@@ -302,6 +303,7 @@ function Settings() {
                 {toast.message}
             </div>
 
+            <Assistant />
         </div>
     );
 }

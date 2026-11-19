@@ -394,6 +394,7 @@ app.post('/settings', authenticateToken, async (req, res) => {
 });
 
 // ===== Chatbot ===== ///
+// POST /assistant answers help questions (needs the login token like the other routes)
 app.use('/assistant', createAssistant({ authenticateToken }).router);
 
 // ===== Start the server ===== ///

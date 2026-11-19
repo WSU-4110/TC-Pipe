@@ -4,6 +4,7 @@ import "./styleSheets/style.css";
 import "./styleSheets/theme.css";
 import "./styleSheets/transactions.css";
 import TopNav from "./components/TopNav.jsx";
+import Assistant from "./components/Assistant.jsx";
 import { buildEmailTemplate } from "./scripts/app.js";
 import { analyze, cmpNullLast, fmtDate, plural, SOON_DAYS } from "./scripts/dashboardHelpers.js";
 
@@ -645,6 +646,7 @@ function Transactions() {
                 )}
             </main>
 
+            <Assistant />
         </div>
     );
 }

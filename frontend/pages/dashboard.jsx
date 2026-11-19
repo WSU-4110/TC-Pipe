@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Chart from 'chart.js/auto';
 import TopNav from "./components/TopNav.jsx";
+import Assistant from "./components/Assistant.jsx";
 import "./styleSheets/style.css";
 import "./styleSheets/theme.css";
 import "./styleSheets/dashboard.css";
@@ -424,7 +425,7 @@ function Dashboard() {
             </main>
 
             {/* Chatbot button */}
-            
+            <Assistant />
         </div>
     );
 }
