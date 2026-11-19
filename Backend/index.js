@@ -7,7 +7,7 @@ const dotenv = require('dotenv');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const { nanoid, customAlphabet } = require('nanoid');
-
+const createAssistant = require('./assistant');
 dotenv.config();
 
 const app = express();
@@ -392,6 +392,9 @@ app.post('/settings', authenticateToken, async (req, res) => {
         res.status(500).json({ error: 'Internal server error (settings)' });
     }
 });
+
+// ===== Chatbot ===== ///
+app.use('/assistant', createAssistant({ authenticateToken }).router);
 
 // ===== Start the server ===== ///
 app.listen(PORT, () => { 
