@@ -1,3 +1,7 @@
+import { autoRisk, daysToClose } from '../../src/assets/transactionUtils.js';
+
+export { autoRisk, daysToClose };
+
 // ==================== SETTINGS FUNCTIONS ==================== //
 // Settings (still uses localStorage since its simple and fast)
 
@@ -227,40 +231,6 @@ export async function apiDelete(fileID) {
 }
 // fileID is passed in the URL as a query parameter
 // PHP reads it with $_GET['fileID']
-
-
-// Utility functions (synchronous so no server needed)
-
-export function daysToClose(closingDate) {
-    if (!closingDate) return '—'; // returns a dash if no closing date was entered
-    const today = new Date();
-    const closing = new Date(closingDate);
-    const diff = Math.ceil((closing - today) / (1000 * 60 * 60 * 24));
-    return diff;
-}
-// subtracting two Date objects gives milliseconds
-// dividing by ms-per-day converts to days
-// then Math.ceil rounds up so partial days count as a full day
-
-export function autoRisk(transaction) {
-    const days = daysToClose(transaction.closingDate);
-    const milestones = [
-        transaction.earnestMoneyReceived,
-        transaction.inspectionComplete,
-        transaction.appraisalReceived,
-        transaction.titleClear,
-        transaction.insuranceConfirmed,
-        transaction.clearToCloseConfirmed
-    ];
-    const incomplete = milestones.filter(m => !m).length;
-    // filter(m => !m) keeps only false/unchecked milestones and counts them
-
-    if (days !== '—' && days <= 7 && incomplete >= 2) return 'High';
-    // closing within 7 days with 2+ open milestones = High risk
-    if (days !== '—' && days <= 14 && incomplete >= 1) return 'Medium';
-    // closing within 14 days with any open milestone = Medium
-    return 'Low';
-}
 
 
 // Render dashboard (now async)

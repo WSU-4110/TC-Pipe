@@ -4,8 +4,10 @@
    TC Pipeline Tracker
 ===================================== */
 
+import { autoRisk } from './transactionUtils.js';
+
 // Strategy 1: Search by File ID or Address
-class SearchFilterStrategy {
+export class SearchFilterStrategy {
 
     filter(deals, searchQuery) {
 
@@ -22,7 +24,7 @@ class SearchFilterStrategy {
 
 
 // Strategy 2: Filter by Transaction Stage
-class StageFilterStrategy {
+export class StageFilterStrategy {
 
     filter(deals, stageFilter) {
 
@@ -42,7 +44,7 @@ class StageFilterStrategy {
 
 // Strategy 3: Filter by Risk Level
 
-class RiskFilterStrategy {
+export class RiskFilterStrategy {
 
     filter(deals, riskFilter) {
 
@@ -61,7 +63,7 @@ class RiskFilterStrategy {
 
 
 // Context Class: Manages the filtering strategies
-class TransactionFilter {
+export class TransactionFilter {
 
     constructor(strategies) {
         this.strategies = strategies;
