@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "nodemon index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+      "test": "jest"
   },
   "keywords": [],
   "author": "",
@@ -20,6 +20,8 @@
     "mysql": "^2.18.1",
     "mysql2": "^3.24.6",
     "nanoid": "^3.3.20",
-    "nodemon": "^1.14.10"
+    "nodemon": "^1.14.10",
+    "jest": "^29.7.0",
+  "supertest": "^7.0.0"
   }
 }
